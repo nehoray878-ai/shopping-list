@@ -192,7 +192,9 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
 .btn.ghost { background: transparent; color: var(--accent); border: 1.5px solid var(--line); }
 .promo { display: inline-flex; align-self: flex-start; gap: 4px; align-items: center; background: var(--promo-bg); color: var(--promo); border-radius: 8px; padding: 1px 8px; font-size: 0.8rem; font-weight: 700; line-height: 1.5; font-variant-numeric: tabular-nums; }
 .promo.on { background: var(--promo); color: var(--surface); }
-.promo { white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.promo { display: inline-block; max-width: 100%; border: 0; text-align: start; font-family: inherit; cursor: pointer; }
+.promo small { display: block; font-weight: 600; font-size: 0.72rem; opacity: .9; }
+.it > .promo { max-width: calc(100% - 104px); }
 .it { flex-wrap: wrap; }
 .it > .promo { margin-inline-start: 104px; margin-top: -6px; margin-bottom: 2px; }
 .card .was { text-decoration: line-through; color: var(--muted); font-size: 0.8rem; font-weight: 400; font-family: var(--font-body); }
@@ -404,20 +406,34 @@ function thumb(p) {
   }
   return Object.assign(document.createElement("div"), { className: "thumb ph", textContent: "✎" });
 }
-function promoShort(pr) { const n = Number.isInteger(pr.x) ? String(pr.x) : pr.x.toFixed(2); return pr.q > 1 ? `${pr.q} ב-${n} ₪` : `${n} ₪`; }
+const num = x => Number.isInteger(x) ? String(x) : x.toFixed(2);
+function promoShort(pr, p) {
+  if (pr.q > 1) return `${pr.q} ב-${num(pr.x)} ₪`;
+  return p ? `${num(pr.x)} ₪ במקום ${num(p.p)} ₪` : `${num(pr.x)} ₪`;
+}
+let listBase = 0;   // סכום הרשימה במחיר רגיל, לבדיקת מבצעים "בקנייה מעל"
+const promoOk = pr => !pr.m || listBase >= pr.m;
 function lineCost(p, qty) {
   if (!p) return 0;
   const pr = p.pr;
-  if (pr && qty >= pr.q) return Math.floor(qty / pr.q) * pr.x + (qty % pr.q) * p.p;
-  return p.p * qty;
+  if (!pr || !promoOk(pr)) return p.p * qty;
+  const eligible = pr.l ? Math.min(qty, pr.l) : qty;
+  const bundles = Math.floor(eligible / pr.q);
+  return bundles * pr.x + (qty - bundles * pr.q) * p.p;
 }
 function promoTag(p, qty) {
   const pr = p && p.pr; if (!pr) return null;
-  const el = document.createElement("span");
-  const active = qty != null && qty >= pr.q;
+  const el = document.createElement("button"); el.type = "button";
+  const active = qty != null && qty >= pr.q && promoOk(pr);
   el.className = "promo" + (active ? " on" : "");
-  el.title = pr.t;
-  el.textContent = (active ? "✓ מבצע: " : "מבצע: ") + promoShort(pr) + ` עד ${pr.e}`;
+  el.textContent = (active ? "✓ מבצע: " : "מבצע: ") + promoShort(pr, p);
+  const cond = [];
+  if (pr.m) cond.push(`בקנייה מעל ${pr.m} ₪`);
+  if (pr.l) cond.push(`עד ${pr.l} יח'`);
+  cond.push(`עד ${pr.e}`);
+  const sm = document.createElement("small"); sm.textContent = cond.join(" · "); el.append(sm);
+  el.setAttribute("aria-label", "פרטי המבצע");
+  el.onclick = e => { e.stopPropagation(); toast(`המבצע בסניף: ${pr.t}`); };
   return el;
 }
 function unitLabel(p) { return p && p.k ? "לק\"ג" : ""; }
@@ -439,7 +455,7 @@ function row(it) {
   body.append(nm, meta);
   const tag = promoTag(p, it.qty);
   if (tag && !it.done) {
-    if (it.qty < p.pr.q) tag.textContent += ` (עוד ${p.pr.q - it.qty})`;
+    if (it.qty < p.pr.q) tag.firstChild.textContent += ` (עוד ${p.pr.q - it.qty})`;
     li._tag = tag;
   }
   const st = document.createElement("div"); st.className = "stepper";
@@ -516,6 +532,7 @@ function renderList() {
   const list = $("list"); list.textContent = "";
   const open = items.filter(i => !i.done);
   const done = items.filter(i => i.done).sort((a, b) => b.doneAt - a.doneAt);
+  listBase = items.reduce((s, i) => { const p = product(i); return s + (p ? p.p * i.qty : 0); }, 0);
   const total = items.reduce((s, i) => { const p = product(i); return s + lineCost(p, i.qty); }, 0);
   const left = open.reduce((s, i) => { const p = product(i); return s + lineCost(p, i.qty); }, 0);
 
@@ -582,7 +599,7 @@ function renderSuggest() {
     const b = document.createElement("button"); b.type = "button"; b.className = "sg" + (i === sgIndex ? " on" : "");
     const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = p.n;
     const pr = document.createElement("span"); pr.className = "pr"; pr.textContent = fmt(p.p);
-    if (p.pr) { const t = promoTag(p); t.style.marginTop = "2px"; const w = document.createElement("span"); w.style.cssText = "flex:1;min-width:0;display:flex;flex-direction:column"; nm.style.flex = "none"; w.append(nm, t); b.append(thumb(p), w, pr); }
+    if (p.pr) { const tb = promoTag(p); const t = document.createElement("span"); t.className = tb.className; t.innerHTML = tb.innerHTML; t.style.marginTop = "2px"; const w = document.createElement("span"); w.style.cssText = "flex:1;min-width:0;display:flex;flex-direction:column"; nm.style.flex = "none"; w.append(nm, t); b.append(thumb(p), w, pr); }
     else b.append(thumb(p), nm, pr);
     b.onmousedown = e => e.preventDefault();
     b.onclick = () => { addProduct(p); clearAdd(); };

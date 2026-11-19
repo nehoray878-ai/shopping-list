@@ -31,6 +31,7 @@ OUT = pathlib.Path(__file__).resolve().parent.parent / "app" / "catalog.json"
 UA = "family-shopping-list/1.0"
 PAGE = 100
 MAX_PROMO_ITEMS = 100     # מבצעים כלליים על מאות מוצרים לא מוצגים
+SKIP_WORDS = ("קופון", "הטבת", "הטבה", "מצטרפים", "שובר", "מתנה")
 PROMO_TYPES = {"1", "3", "10"}  # סוגי מבצע עם מחיר ברור: "X ב-Y" או "ב-Y" (בלי קופונים ואחוזים)
 
 
@@ -141,6 +142,18 @@ def parse_promos(xml, today):
         items = el.findall(".//PromotionItem")
         if start <= today <= end and club == "0" and 0 < len(items) <= MAX_PROMO_ITEMS:
             desc = (el.findtext("PromotionDescription") or "").strip()
+            # קופונים, הטבות ומבצעי מצטרפים לא זמינים לכל לקוח
+            if any(w in desc for w in SKIP_WORDS):
+                el.clear()
+                continue
+            m = re.search(r"(?:מעל|מע)\s?(\d+)", desc)          # "מעל 75" = בקנייה מעל 75 ש"ח
+            min_buy = int(m.group(1)) if m else 0
+            try:
+                min_buy = max(min_buy, int(float(el.findtext(".//MinPurchaseAmount") or 0)))
+            except ValueError:
+                pass
+            m = re.search(r"מו\s?(\d+)", desc)                  # "מו3" = עד 3 יחידות
+            limit = int(m.group(1)) if m else 0
             for it in items:
                 try:
                     if (it.findtext("RewardType") or "").strip() not in PROMO_TYPES:
@@ -153,7 +166,12 @@ def parse_promos(xml, today):
                 if x <= 0:
                     continue
                 cand = {"t": desc, "q": q, "x": x, "e": end[8:10] + "/" + end[5:7]}
-                if code not in best or x / q < best[code]["x"] / best[code]["q"]:
+                if min_buy:
+                    cand["m"] = min_buy
+                if limit:
+                    cand["l"] = limit
+                key = lambda c: (1 if c.get("m") else 0, c["x"] / c["q"])   # עדיף מבצע בלי תנאי
+                if code not in best or key(cand) < key(best[code]):
                     best[code] = cand
         el.clear()
     return best
@@ -189,6 +207,14 @@ def main():
         print("המחירון של הסניף לא זמין, נשארים מחירי האתר:", e)
         prices, promos = {}, {}
 
+    def promo_ok(pr, price):
+        unit = pr["x"] / pr["q"]
+        if unit >= price - 0.005:
+            return False                       # לא באמת זול יותר
+        if unit < price * 0.35 and not (pr.get("m") or pr.get("l")):
+            return False                       # הנחה חריגה בלי תנאי: כנראה שיוך שגוי במחירון
+        return True
+
     def branch_code(b):
         """פירות וירקות מופיעים באתר בקוד קצר (100 = עגבניה) ובמחירון כ-7290000000100."""
         if b in prices:
@@ -208,7 +234,7 @@ def main():
         elif prices:
             p["o"] = 1          # לא במחירון הסניף: מחיר האתר
         pr = promos.get(bc or p["b"])
-        if pr and pr["x"] / pr["q"] < p["p"] - 0.005:   # רק מבצע שבאמת זול יותר
+        if pr and promo_ok(pr, p["p"]):
             p["pr"] = pr
         products.append(p)
     # מוצרים שנמכרים בסניף ואין להם דף באתר (בלי תמונה)
@@ -218,7 +244,7 @@ def main():
             continue
         p = {"id": "s" + code, "b": code, "n": bp["n"], "p": bp["p"], "d": "", "i": "", "k": bp["k"]}
         pr = promos.get(code)
-        if pr and pr["x"] / pr["q"] < p["p"] - 0.005:
+        if pr and promo_ok(pr, p["p"]):
             p["pr"] = pr
         products.append(p)
 
