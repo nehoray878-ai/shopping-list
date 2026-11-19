@@ -34,7 +34,7 @@
 html, body { margin: 0; }
 body {
   background: var(--bg); color: var(--fg);
-  font-family: var(--font-body); font-size: 17px; line-height: 1.45;
+  font-family: var(--font-body); font-size: 1.0625rem; line-height: 1.45;
   padding-top: env(safe-area-inset-top, 0px);
   padding-bottom: calc(var(--tabbar) + env(safe-area-inset-bottom, 0px));
 }
@@ -132,12 +132,52 @@ ul.items { list-style: none; margin: 0; padding: 0; background: var(--surface); 
 .card .add { width: 38px; height: 38px; border-radius: 12px; border: 0; background: var(--accent); color: var(--on-accent); font-size: 1.4rem; line-height: 1; }
 .card.inlist { border-color: var(--accent); }
 .more { align-self: center; }
+html.big { font-size: 19px; }
+html.big .thumb { width: 56px; height: 56px; }
+html.big .stepper button { width: 44px; height: 44px; }
+html.big .chk span { width: 30px; height: 30px; }
+html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+.card { position: relative; }
+.star { position: absolute; top: 6px; inset-inline-end: 6px; width: 38px; height: 38px; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--surface) 85%, transparent); color: var(--muted); font-size: 1.25rem; line-height: 1; z-index: 1; }
+.star.on { color: #e0a100; }
+.favs { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.favs .hd { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.favs .hd strong { font-family: var(--font-display); font-weight: 500; font-size: 0.95rem; }
+.favs .tip { color: var(--muted); font-size: 0.85rem; margin: 0; }
+.fchips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.fchips::-webkit-scrollbar { display: none; }
+.fchip { flex: none; display: flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--bg); border-radius: 99px; padding: 3px 12px 3px 4px; font-size: 0.88rem; max-width: 200px; }
+.fchip img, .fchip .ph { width: 28px; height: 28px; border-radius: 50%; object-fit: contain; background: #fff; flex: none; }
+.fchip .ph { display: grid; place-items: center; background: var(--accent-soft); }
+.fchip span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fchip::after { content: "+"; color: var(--accent); font-weight: 700; }
+.vh { font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; margin: 0; }
+.vsub { color: var(--muted); font-size: 0.9rem; margin: 0; }
+.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.stat .l { color: var(--muted); font-size: 0.78rem; }
+.stat .v { font-family: var(--font-display); font-weight: 700; font-size: 1.15rem; font-variant-numeric: tabular-nums; }
+.trip { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.trip > button { width: 100%; border: 0; background: transparent; display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 12px 14px; text-align: start; }
+.trip .d { font-weight: 600; }
+.trip .m { color: var(--muted); font-size: 0.85rem; }
+.trip .t { font-family: var(--font-display); font-weight: 700; font-variant-numeric: tabular-nums; }
+.trip .det { border-top: 1px solid var(--line); padding: 10px 14px; display: flex; flex-direction: column; gap: 6px; }
+.trip .li { display: flex; justify-content: space-between; gap: 10px; font-size: 0.92rem; }
+.trip .li span:first-child { min-width: 0; overflow-wrap: anywhere; }
+.trip .li span:last-child { font-variant-numeric: tabular-nums; color: var(--muted); white-space: nowrap; }
 .group h2.tog { cursor: pointer; user-select: none; }
 .group h2 .chev { display: inline-block; transition: transform .2s; margin-inline-end: 4px; }
 .group.closed h2 .chev { transform: rotate(90deg); }
 .group.closed ul { display: none; }
 .group h2 .sub { font-family: var(--font-body); font-weight: 600; font-variant-numeric: tabular-nums; }
-.tools { display: flex; justify-content: flex-end; margin-top: -8px; }
+.tools { display: flex; justify-content: space-between; gap: 8px; margin-top: -8px; flex-wrap: wrap; }
+.toolbtn .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--muted); margin-inline-end: 6px; vertical-align: middle; }
+.toolbtn .dot.on { background: #3fa66b; }
+.code { font-family: var(--font-display); font-weight: 700; font-size: 1.8rem; letter-spacing: 0.18em; text-align: center; direction: ltr; background: var(--bg); border-radius: 12px; padding: 10px; user-select: all; }
+.joinrow { display: flex; gap: 8px; }
+.joinrow input { flex: 1; min-width: 0; font: inherit; font-size: 1.1rem; letter-spacing: 0.12em; text-transform: uppercase; direction: ltr; text-align: center; border: 1.5px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--fg); padding: 10px; }
+.panel .err { color: var(--danger); font-size: 0.88rem; }
 .toolbtn { border: 0; background: transparent; color: var(--accent); font-weight: 600; font-size: 0.92rem; padding: 4px 6px; border-radius: 8px; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
 .panel h3 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 1.05rem; }
@@ -202,7 +242,8 @@ ul.items { list-style: none; margin: 0; padding: 0; background: var(--surface); 
         <div class="count" id="count">0 פריטים</div>
         <div class="bar"><i id="bar"></i></div>
       </div>
-      <div class="tools"><button class="toolbtn" id="orderBtn" type="button">⇅ סדר המחלקות</button></div>
+      <div class="tools"><button class="toolbtn" id="shareBtn" type="button" hidden>רשימה משותפת</button><span style="display:flex;gap:2px;flex-wrap:wrap"><button class="toolbtn" id="waBtn" type="button">שליחה בוואטסאפ</button><button class="toolbtn" id="bigBtn" type="button" aria-pressed="false">Aa טקסט גדול</button><button class="toolbtn" id="orderBtn" type="button">⇅ סדר המחלקות</button></span></div>
+      <div class="panel" id="sharePanel" hidden></div>
       <div class="panel" id="orderPanel" hidden></div>
       <div class="addbar">
         <div style="position:relative">
@@ -214,6 +255,7 @@ ul.items { list-style: none; margin: 0; padding: 0; background: var(--surface); 
           <div class="suggest" id="suggest" hidden></div>
         </div>
       </div>
+      <div class="favs" id="favs"></div>
       <main id="list"></main>
     </div>
   </div>
@@ -234,6 +276,27 @@ ul.items { list-style: none; margin: 0; padding: 0; background: var(--surface); 
     </div>
   </div>
 
+  <!-- DEALS VIEW -->
+  <div id="viewDeals" hidden>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <h2 class="vh">מבצעי השבוע בסניף</h2>
+      <div id="dealsMine" style="display:flex;flex-direction:column;gap:10px"></div>
+      <h3 class="vh" style="font-size:1.05rem">כל המבצעים</h3>
+      <form class="search" id="dealsForm" autocomplete="off">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input id="dealsInput" type="search" placeholder="חיפוש במבצעים" aria-label="חיפוש במבצעים" enterkeyhint="search">
+      </form>
+      <div class="resinfo" id="dealsInfo"></div>
+      <div class="grid" id="dealsGrid"></div>
+      <button class="btn more" id="dealsMore" type="button" hidden>הצג עוד מבצעים</button>
+    </div>
+  </div>
+
+  <!-- HISTORY VIEW -->
+  <div id="viewHistory" hidden>
+    <div style="display:flex;flex-direction:column;gap:12px" id="history"></div>
+  </div>
+
   <p class="note" id="note"></p>
 </div>
 
@@ -245,7 +308,15 @@ ul.items { list-style: none; margin: 0; padding: 0; background: var(--surface); 
   </button>
   <button class="tab" id="tabCatalog" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 11h10.2L20 8H6.2"/><circle cx="9" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/></svg>
-    מוצרים ומחירים
+    מוצרים
+  </button>
+  <button class="tab" id="tabDeals" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12V4h8l10 10-8 8L3 12z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>
+    מבצעים
+  </button>
+  <button class="tab" id="tabHistory" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></svg>
+    היסטוריה
   </button>
 </nav>
 <div class="toast" id="toast" hidden></div>
@@ -488,10 +559,10 @@ function renderList() {
     const head = document.createElement("div"); head.className = "cart-head";
     const h = document.createElement("h2"); h.innerHTML = `<span>בעגלה (${done.length})</span>`;
     const b = document.createElement("button"); b.type = "button"; b.className = "linkbtn" + (confirmClear ? " confirm" : "");
-    b.textContent = confirmClear ? "בטוח? לחצו שוב" : "נקה עגלה";
+    b.textContent = confirmClear ? "בטוח? לחצו שוב" : "סיימתי קנייה";
     b.onclick = () => {
       if (!confirmClear) { confirmClear = true; renderList(); setTimeout(() => { if (confirmClear) { confirmClear = false; renderList(); } }, 4000); return; }
-      confirmClear = false; const n = done.length; items = items.filter(i => !i.done); save(); renderAll(); toast(`${n} פריטים נוקו`);
+      confirmClear = false; const n = done.length; saveTrip(done); items = items.filter(i => !i.done); save(); renderAll(); toast(`הקנייה נשמרה בהיסטוריה (${n} פריטים)`);
     };
     head.append(h, b);
     const ul = document.createElement("ul"); ul.className = "items"; done.forEach(i => ul.append(row(i)));
@@ -554,37 +625,42 @@ function renderDepts() {
   mk("הכול", "");
   [...counts.keys()].sort((a, b) => rank(a) - rank(b)).forEach(d => mk(d, d));
 }
+function cardFor(p) {
+  const c = document.createElement("div"); const it = inList(p.id);
+  c.className = "card" + (it ? " inlist" : "");
+  const star = document.createElement("button"); star.type = "button"; star.className = "star" + (isFav(p.id) ? " on" : "");
+  star.textContent = isFav(p.id) ? "★" : "☆"; star.setAttribute("aria-label", (isFav(p.id) ? "הסרה מהקבועים: " : "הוספה לקבועים: ") + p.n);
+  star.onclick = () => toggleFav(p);
+  const im = document.createElement("div"); im.className = "img";
+  if (p.i) { const img = document.createElement("img"); img.loading = "lazy"; img.alt = ""; img.src = catalog.imgBase + p.i; img.onerror = () => img.remove(); im.append(img); }
+  const nm = document.createElement("div"); nm.className = "nm"; nm.textContent = p.n;
+  const r = document.createElement("div"); r.className = "row";
+  const pr = document.createElement("div"); pr.className = "pr"; pr.textContent = fmt(p.p);
+  if (p.k) { const s = document.createElement("small"); s.textContent = " לק\"ג"; pr.append(s); }
+  r.append(pr);
+  const tag = promoTag(p, it ? it.qty : null);
+  if (it) {
+    const st = document.createElement("div"); st.className = "stepper";
+    st.innerHTML = `<button type="button" aria-label="הפחת">−</button><span class="q">${it.qty}</span><button type="button" aria-label="הוסף">+</button>`;
+    st.children[0].onclick = () => setQty(it.id, it.qty - 1);
+    st.children[2].onclick = () => setQty(it.id, it.qty + 1);
+    r.append(st);
+  } else {
+    const b = document.createElement("button"); b.type = "button"; b.className = "add"; b.textContent = "+";
+    b.setAttribute("aria-label", "הוסף לרשימה: " + p.n); b.onclick = () => addProduct(p);
+    r.append(b);
+  }
+  c.append(star, im, nm);
+  if (tag) c.append(tag);
+  if (p.o) c.append(Object.assign(document.createElement("span"), { className: "onl", textContent: "מחיר אונליין (לא במחירון הסניף)" }));
+  c.append(r);
+  return c;
+}
 function renderCatalog() {
   const res = search($("catInput").value, deptFilter);
   $("resinfo").textContent = catalog.products.length ? `${res.length.toLocaleString("he-IL")} מוצרים` : "טוען את מאגר המוצרים…";
   const grid = $("grid"); grid.textContent = "";
-  res.slice(0, catShown).forEach(p => {
-    const c = document.createElement("div"); const it = inList(p.id);
-    c.className = "card" + (it ? " inlist" : "");
-    const im = document.createElement("div"); im.className = "img";
-    if (p.i) { const img = document.createElement("img"); img.loading = "lazy"; img.alt = ""; img.src = catalog.imgBase + p.i; img.onerror = () => img.remove(); im.append(img); }
-    const nm = document.createElement("div"); nm.className = "nm"; nm.textContent = p.n;
-    const r = document.createElement("div"); r.className = "row";
-    const pr = document.createElement("div"); pr.className = "pr"; pr.textContent = fmt(p.p);
-    if (p.k) { const s = document.createElement("small"); s.textContent = " לק\"ג"; pr.append(s); }
-    r.append(pr);
-    const tag = promoTag(p, it ? it.qty : null);
-    if (it) {
-      const st = document.createElement("div"); st.className = "stepper";
-      st.innerHTML = `<button type="button" aria-label="הפחת">−</button><span class="q">${it.qty}</span><button type="button" aria-label="הוסף">+</button>`;
-      st.children[0].onclick = () => setQty(it.id, it.qty - 1);
-      st.children[2].onclick = () => setQty(it.id, it.qty + 1);
-      r.append(st);
-    } else {
-      const b = document.createElement("button"); b.type = "button"; b.className = "add"; b.textContent = "+";
-      b.setAttribute("aria-label", "הוסף לרשימה: " + p.n); b.onclick = () => addProduct(p);
-      r.append(b);
-    }
-    c.append(im, nm);
-    if (tag) c.append(tag);
-    if (p.o) c.append(Object.assign(document.createElement("span"), { className: "onl", textContent: "מחיר אונליין (לא במחירון הסניף)" }));
-    c.append(r); grid.append(c);
-  });
+  res.slice(0, catShown).forEach(p => grid.append(cardFor(p)));
   $("more").hidden = res.length <= catShown;
 }
 let catTimer;
@@ -594,16 +670,184 @@ $("more").onclick = () => { catShown += 40; renderCatalog(); };
 
 /* ---------- views ---------- */
 let view = "list";
+const VIEWS = { list: "List", catalog: "Catalog", deals: "Deals", history: "History" };
 function showView(v) {
   view = v;
-  $("viewList").hidden = v !== "list"; $("viewCatalog").hidden = v !== "catalog";
-  $("tabList").classList.toggle("on", v === "list"); $("tabCatalog").classList.toggle("on", v === "catalog");
-  if (v === "catalog") renderCatalog();
+  for (const [k, n] of Object.entries(VIEWS)) { $("view" + n).hidden = k !== v; $("tab" + n).classList.toggle("on", k === v); }
+  renderAll();
   window.scrollTo(0, 0);
 }
-$("tabList").onclick = () => showView("list");
-$("tabCatalog").onclick = () => showView("catalog");
-function renderAll() { renderList(); if (view === "catalog") renderCatalog(); }
+for (const [k, n] of Object.entries(VIEWS)) $("tab" + n).onclick = () => showView(k);
+function renderAll() {
+  renderList(); renderFavs();
+  if (view === "catalog") renderCatalog();
+  if (view === "deals") renderDeals();
+  if (view === "history") renderHistory();
+}
+
+/* ---------- small storage helpers ---------- */
+function loadJSON(k, d) { try { const v = JSON.parse(localStorage.getItem(k) || "null"); return v ?? d; } catch { return d; } }
+function saveJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+
+/* ---------- regular items (favorites) ---------- */
+let favs = loadJSON("favs", []);            // מזהי מוצרים
+const isFav = id => favs.includes(id);
+function toggleFav(p) {
+  if (isFav(p.id)) { favs = favs.filter(x => x !== p.id); toast(`הוסר מהקבועים: ${p.n}`); }
+  else { favs.push(p.id); toast(`נוסף לקבועים: ${p.n}`); }
+  saveJSON("favs", favs); renderAll();
+}
+function frequent(min = 2) {
+  const cnt = new Map();
+  for (const t of history) for (const it of new Set(t.items.map(x => x.pid).filter(x => x != null))) cnt.set(it, (cnt.get(it) || 0) + 1);
+  return [...cnt.entries()].filter(([, n]) => n >= min).sort((a, b) => b[1] - a[1]).map(([id]) => id);
+}
+function chip(p, onclick) {
+  const b = document.createElement("button"); b.type = "button"; b.className = "fchip";
+  if (p.i) { const im = document.createElement("img"); im.src = catalog.imgBase + p.i; im.alt = ""; im.loading = "lazy"; b.append(im); }
+  else b.append(Object.assign(document.createElement("span"), { className: "ph", textContent: "🛒" }));
+  b.append(Object.assign(document.createElement("span"), { textContent: p.n }));
+  b.onclick = onclick; return b;
+}
+function renderFavs() {
+  const box = $("favs"); box.textContent = "";
+  if (!catalog.products.length) { box.hidden = true; return; }
+  box.hidden = false;
+  const mine = favs.map(id => byId.get(id)).filter(Boolean);
+  const hd = document.createElement("div"); hd.className = "hd";
+  const title = document.createElement("strong");
+  if (mine.length) {
+    const missing = mine.filter(p => !inList(p.id));
+    title.textContent = `⭐ הקבועים שלי (${mine.length})`;
+    hd.append(title);
+    if (missing.length) {
+      const all = document.createElement("button"); all.type = "button"; all.className = "toolbtn"; all.textContent = `הוספת כולם (${missing.length})`;
+      all.onclick = () => { missing.forEach(p => addProduct(p)); toast(`נוספו ${missing.length} מוצרים קבועים`); };
+      hd.append(all);
+      const row = document.createElement("div"); row.className = "fchips";
+      missing.forEach(p => row.append(chip(p, () => addProduct(p))));
+      box.append(hd, row);
+    } else {
+      box.append(hd, Object.assign(document.createElement("p"), { className: "tip", textContent: "כל הקבועים כבר ברשימה ✓" }));
+    }
+    return;
+  }
+  const sug = frequent().map(id => byId.get(id)).filter(p => p && !inList(p.id)).slice(0, 12);
+  if (sug.length) {
+    title.textContent = "קונים הרבה";
+    hd.append(title);
+    const row = document.createElement("div"); row.className = "fchips";
+    sug.forEach(p => row.append(chip(p, () => addProduct(p))));
+    box.append(hd, row, Object.assign(document.createElement("p"), { className: "tip", textContent: "טיפ: לחיצה על ☆ במסך המוצרים שומרת מוצר בקבועים, ואז אפשר להוסיף את כולם בלחיצה אחת." }));
+  } else {
+    box.append(Object.assign(document.createElement("p"), { className: "tip", textContent: "⭐ טיפ: סמנו ☆ על המוצרים שאתם קונים כל שבוע (במסך המוצרים), ואז תוכלו להוסיף את כולם לרשימה בלחיצה אחת." }));
+  }
+}
+
+/* ---------- purchase history ---------- */
+let history = loadJSON("history", []);      // {t, total, items:[{pid,name,qty,cost}]}
+function saveTrip(done) {
+  const its = done.map(i => { const p = product(i); return { pid: i.pid ?? null, name: i.name, qty: i.qty, cost: p ? +lineCost(p, i.qty).toFixed(2) : 0 }; });
+  history.unshift({ t: Date.now(), total: +its.reduce((s, x) => s + x.cost, 0).toFixed(2), items: its });
+  history = history.slice(0, 200);
+  saveJSON("history", history);
+}
+const monthKey = t => { const d = new Date(t); return d.getFullYear() * 12 + d.getMonth(); };
+function renderHistory() {
+  const box = $("history"); box.textContent = "";
+  box.append(Object.assign(document.createElement("h2"), { className: "vh", textContent: "היסטוריית קניות" }));
+  if (!history.length) {
+    const e = document.createElement("div"); e.className = "empty";
+    e.innerHTML = "<strong>עוד אין קניות שמורות</strong><span>בסוף קנייה לוחצים על \"סיימתי קנייה\" ברשימה, והקנייה נשמרת כאן עם הסכום.</span>";
+    box.append(e); return;
+  }
+  const now = monthKey(Date.now());
+  const sum = k => history.filter(t => monthKey(t.t) === k).reduce((s, t) => s + t.total, 0);
+  const avg = history.reduce((s, t) => s + t.total, 0) / history.length;
+  const stats = document.createElement("div"); stats.className = "stats";
+  [["החודש", sum(now)], ["חודש שעבר", sum(now - 1)], ["ממוצע לקנייה", avg]].forEach(([l, v]) => {
+    const d = document.createElement("div"); d.className = "stat";
+    d.innerHTML = `<span class="l"></span><span class="v"></span>`; d.children[0].textContent = l; d.children[1].textContent = fmt(v);
+    stats.append(d);
+  });
+  box.append(stats, Object.assign(document.createElement("p"), { className: "vsub", textContent: "הסכומים משוערים לפי מחירי הסניף ביום הקנייה." }));
+  const dfmt = new Intl.DateTimeFormat("he-IL", { weekday: "long", day: "numeric", month: "numeric" });
+  history.forEach(t => {
+    const w = document.createElement("div"); w.className = "trip";
+    const head = document.createElement("button"); head.type = "button";
+    head.innerHTML = `<span style="display:flex;flex-direction:column"><span class="d"></span><span class="m"></span></span><span class="t"></span>`;
+    head.querySelector(".d").textContent = dfmt.format(t.t);
+    head.querySelector(".m").textContent = `${t.items.length} פריטים`;
+    head.querySelector(".t").textContent = fmt(t.total);
+    const det = document.createElement("div"); det.className = "det"; det.hidden = true;
+    t.items.forEach(x => {
+      const li = document.createElement("div"); li.className = "li";
+      li.innerHTML = "<span></span><span></span>"; li.children[0].textContent = `${x.name}${x.qty > 1 ? " ×" + x.qty : ""}`; li.children[1].textContent = x.cost ? fmt(x.cost) : "";
+      det.append(li);
+    });
+    const again = document.createElement("button"); again.type = "button"; again.className = "btn ghost"; again.textContent = "להוסיף שוב את כל הקנייה לרשימה";
+    again.onclick = () => {
+      let n = 0;
+      for (const x of t.items) { const p = x.pid != null ? byId.get(x.pid) : null; if (p) { if (!inList(p.id)) { addProduct(p, x.qty); n++; } } else if (!items.some(i => !i.done && i.name === x.name)) { addFree(x.name); n++; } }
+      toast(n ? `נוספו ${n} מוצרים לרשימה` : "כל המוצרים כבר ברשימה");
+    };
+    det.append(again);
+    head.onclick = () => { det.hidden = !det.hidden; };
+    w.append(head, det); box.append(w);
+  });
+}
+
+/* ---------- weekly deals ---------- */
+let dealsShown = 40;
+function renderDeals() {
+  const mineBox = $("dealsMine"); mineBox.textContent = "";
+  if (!catalog.products.length) { $("dealsInfo").textContent = "טוען…"; return; }
+  const ids = new Set([...favs, ...frequent(1), ...items.map(i => i.pid).filter(x => x != null)]);
+  const mine = [...ids].map(id => byId.get(id)).filter(p => p && p.pr);
+  if (mine.length) {
+    mineBox.append(Object.assign(document.createElement("p"), { className: "vsub", textContent: `${mine.length} מוצרים שאתם קונים נמצאים עכשיו במבצע:` }));
+    const g = document.createElement("div"); g.className = "grid"; mine.forEach(p => g.append(cardFor(p))); mineBox.append(g);
+  } else {
+    mineBox.append(Object.assign(document.createElement("p"), { className: "vsub", textContent: "כאן יופיעו מבצעים על מוצרים שאתם קונים (מהקבועים, מהרשימה ומההיסטוריה)." }));
+  }
+  const q = $("dealsInput").value;
+  const disc = p => 1 - (p.pr.x / p.pr.q) / p.p;
+  const all = search(q, "").filter(p => p.pr && p.i).sort((a, b) => q.trim() ? 0 : disc(b) - disc(a));
+  $("dealsInfo").textContent = `${all.length.toLocaleString("he-IL")} מוצרים במבצע · מהמשתלמים ביותר`;
+  const g = $("dealsGrid"); g.textContent = "";
+  all.slice(0, dealsShown).forEach(p => g.append(cardFor(p)));
+  $("dealsMore").hidden = all.length <= dealsShown;
+}
+let dealsTimer;
+$("dealsInput").addEventListener("input", () => { clearTimeout(dealsTimer); dealsTimer = setTimeout(() => { dealsShown = 40; renderDeals(); }, 150); });
+$("dealsForm").addEventListener("submit", e => { e.preventDefault(); $("dealsInput").blur(); });
+$("dealsMore").onclick = () => { dealsShown += 40; renderDeals(); };
+
+/* ---------- big text ---------- */
+function applyBig(on) { document.documentElement.classList.toggle("big", on); $("bigBtn").setAttribute("aria-pressed", on ? "true" : "false"); $("bigBtn").textContent = on ? "Aa טקסט רגיל" : "Aa טקסט גדול"; }
+applyBig(loadJSON("big-text", false));
+$("bigBtn").onclick = () => { const on = !document.documentElement.classList.contains("big"); saveJSON("big-text", on); applyBig(on); };
+
+/* ---------- WhatsApp ---------- */
+function listText() {
+  const open = items.filter(i => !i.done);
+  const groups = new Map();
+  for (const it of open) { const d = deptOf(it); if (!groups.has(d)) groups.set(d, []); groups.get(d).push(it); }
+  const coll = new Intl.Collator("he");
+  const lines = [`🛒 רשימת קניות${catalog.branch ? " – רמי לוי " + catalog.branch.name : ""}`];
+  for (const [d, its] of [...groups.entries()].sort((a, b) => rank(a[0]) - rank(b[0]))) {
+    lines.push("", `*${d}*`);
+    its.sort((a, b) => coll.compare(a.name, b.name)).forEach(i => lines.push(`• ${i.name}${i.qty > 1 ? " ×" + i.qty : ""}`));
+  }
+  const total = open.reduce((s, i) => s + lineCost(product(i), i.qty), 0);
+  if (total) lines.push("", `סה"כ משוער: ${fmt(total)}`);
+  return lines.join("\n");
+}
+$("waBtn").onclick = () => {
+  if (!items.some(i => !i.done)) { toast("הרשימה ריקה, אין מה לשלוח"); return; }
+  const a = document.createElement("a"); a.href = "https://wa.me/?text=" + encodeURIComponent(listText()); a.target = "_blank"; a.rel = "noopener";
+  document.body.append(a); a.click(); a.remove();
+};
 
 /* ---------- toast ---------- */
 let tt;
@@ -631,6 +875,130 @@ addEventListener("beforeinstallprompt", e => {
 $("installBtn").onclick = async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; $("install").hidden = true; };
 $("installX").onclick = () => { $("install").hidden = true; try { localStorage.setItem("install-dismissed", "1"); } catch {} };
 if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+
+
+/* ---------- shared list (Firebase) ---------- */
+// ההגדרות של פרויקט Firebase (אינן סוד: הן מזהות את הפרויקט, ההרשאות נקבעות בכללי האבטחה)
+const FIREBASE_CONFIG = null;
+const FB_VER = "10.12.2";
+const CODE_ABC = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+let db = null, unsub = null, last = new Map(), syncState = "off";
+let listCode = (() => { try { return localStorage.getItem("list-code") || ""; } catch { return ""; } })();
+
+function loadScript(src) {
+  return new Promise((res, rej) => { const el = document.createElement("script"); el.src = src; el.onload = res; el.onerror = rej; document.head.append(el); });
+}
+async function ensureFirebase() {
+  if (db) return db;
+  await loadScript(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-app-compat.js`);
+  await loadScript(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-firestore-compat.js`);
+  firebase.initializeApp(FIREBASE_CONFIG);
+  db = firebase.firestore();
+  try { await db.enablePersistence({ synchronizeTabs: true }); } catch {}
+  return db;
+}
+const itemsRef = code => db.collection("lists").doc(code).collection("items");
+function toDoc(it) { return { pid: it.pid ?? null, name: it.name, qty: it.qty, done: !!it.done, createdAt: it.createdAt || Date.now(), doneAt: it.doneAt ?? null }; }
+const same = (a, b) => JSON.stringify(toDoc(a)) === JSON.stringify(toDoc(b));
+
+// כל שינוי ברשימה עובר דרך save(): שולחים לענן רק את מה שהשתנה
+const saveLocal = save;
+save = function () {
+  saveLocal();
+  if (!listCode || !db) return;
+  const ref = itemsRef(listCode), batch = db.batch(); let n = 0;
+  const now = new Map(items.map(i => [i.id, i]));
+  for (const it of items) if (!last.has(it.id) || !same(it, last.get(it.id))) { batch.set(ref.doc(it.id), toDoc(it)); n++; }
+  for (const id of last.keys()) if (!now.has(id)) { batch.delete(ref.doc(id)); n++; }
+  last = new Map(items.map(i => [i.id, { ...i }]));
+  if (n) batch.commit().catch(() => toast("השינוי נשמר בטלפון ויישלח כשיהיה חיבור"));
+};
+
+function setSync(state) {
+  syncState = state;
+  const b = $("shareBtn");
+  b.innerHTML = `<span class="dot${state === "on" ? " on" : ""}"></span>` + (listCode ? "רשימה משותפת" : "שיתוף הרשימה");
+  if (!$("sharePanel").hidden) renderSharePanel();
+}
+
+async function connect(code, uploadLocal) {
+  await ensureFirebase();
+  if (unsub) unsub();
+  listCode = code; try { localStorage.setItem("list-code", code); } catch {}
+  last = new Map();
+  const ref = itemsRef(code);
+  if (uploadLocal && items.length) {
+    const remote = await ref.get();
+    const have = new Set(remote.docs.map(d => { const x = d.data(); return x.done ? "" : (x.pid ?? "n:" + x.name); }));
+    const batch = db.batch(); let n = 0;
+    for (const it of items) if (!have.has(it.pid ?? "n:" + it.name)) { batch.set(ref.doc(it.id), toDoc(it)); n++; }
+    if (n) await batch.commit();
+  }
+  setSync("connecting");
+  unsub = ref.onSnapshot({ includeMetadataChanges: true }, snap => {
+    items = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    last = new Map(items.map(i => [i.id, { ...i }]));
+    saveLocal(); renderAll();
+    setSync(snap.metadata.fromCache ? "offline" : "on");
+  }, () => setSync("offline"));
+}
+
+function newCode() { let c = ""; const r = crypto.getRandomValues(new Uint32Array(10)); for (const x of r) c += CODE_ABC[x % CODE_ABC.length]; return c; }
+function shareLink() { return location.origin + location.pathname + "?list=" + listCode; }
+
+function renderSharePanel() {
+  const panel = $("sharePanel"); panel.textContent = "";
+  const h = document.createElement("h3"); const p = document.createElement("p");
+  if (listCode) {
+    h.textContent = "הרשימה משותפת";
+    p.textContent = syncState === "on" ? "מסונכרן ✓ כל שינוי מופיע מיד אצל כל מי שהצטרף." : syncState === "offline" ? "אין חיבור כרגע. השינויים נשמרים בטלפון ויישלחו כשהחיבור יחזור." : "מתחבר…";
+    const code = document.createElement("div"); code.className = "code"; code.textContent = listCode;
+    const p2 = document.createElement("p"); p2.textContent = "כדי לצרף את אמא או בן משפחה: שלחו את הקישור. אם האפליקציה כבר מותקנת אצלם, הם יכולים גם להקליד את הקוד תחת \"שיתוף הרשימה\".";
+    const row = document.createElement("div"); row.className = "row2";
+    const wa = document.createElement("a"); wa.className = "btn"; wa.style.textDecoration = "none"; wa.textContent = "שליחה בוואטסאפ";
+    wa.href = "https://wa.me/?text=" + encodeURIComponent(`הצטרפו לרשימת הקניות שלנו 🛒\n${shareLink()}\nקוד הרשימה: ${listCode}`);
+    wa.target = "_blank"; wa.rel = "noopener";
+    const cp = document.createElement("button"); cp.type = "button"; cp.className = "btn ghost"; cp.textContent = "העתקת קישור";
+    cp.onclick = async () => { try { await navigator.clipboard.writeText(shareLink()); toast("הקישור הועתק"); } catch { toast(shareLink()); } };
+    row.append(wa, cp);
+    const leave = document.createElement("button"); leave.type = "button"; leave.className = "linkbtn"; leave.textContent = "יציאה מהרשימה המשותפת";
+    let sure = false;
+    leave.onclick = () => {
+      if (!sure) { sure = true; leave.textContent = "בטוח? הרשימה תישאר רק בטלפון הזה"; leave.classList.add("confirm"); return; }
+      if (unsub) unsub(); unsub = null; listCode = ""; last = new Map();
+      try { localStorage.removeItem("list-code"); } catch {}
+      setSync("off"); renderSharePanel(); toast("יצאת מהרשימה המשותפת");
+    };
+    panel.append(h, p, code, p2, row, leave);
+  } else {
+    h.textContent = "רשימה משותפת למשפחה";
+    p.textContent = "מה שמוסיפים בטלפון אחד מופיע מיד בטלפון השני, וגם מה שכבר בעגלה.";
+    const create = document.createElement("button"); create.type = "button"; create.className = "btn"; create.textContent = "יצירת רשימה משותפת מהרשימה שלי";
+    const err = document.createElement("div"); err.className = "err";
+    create.onclick = async () => { create.disabled = true; try { await connect(newCode(), true); toast("נוצרה רשימה משותפת"); } catch { err.textContent = "אין חיבור לאינטרנט. נסו שוב בעוד רגע."; create.disabled = false; } };
+    const p2 = document.createElement("p"); p2.textContent = "קיבלתם קוד ממישהו במשפחה? הקלידו אותו כאן:";
+    const row = document.createElement("form"); row.className = "joinrow";
+    row.innerHTML = '<input id="joinCode" maxlength="12" autocomplete="off" autocapitalize="characters" placeholder="ABCD2345EF" aria-label="קוד רשימה"><button class="btn" type="submit">הצטרפות</button>';
+    row.onsubmit = async e => {
+      e.preventDefault();
+      const c = row.querySelector("input").value.toUpperCase().replace(/[^A-Z0-9]/g, "");
+      if (c.length < 8) { err.textContent = "הקוד קצר מדי. בדקו שהקלדתם את כל התווים."; return; }
+      try { await connect(c, true); toast("הצטרפת לרשימה המשותפת"); } catch { err.textContent = "לא הצלחנו להתחבר. בדקו את החיבור לאינטרנט ונסו שוב."; }
+    };
+    panel.append(h, p, create, p2, row, err);
+  }
+}
+
+if (FIREBASE_CONFIG) {
+  $("shareBtn").hidden = false;
+  $("shareBtn").onclick = () => { const p = $("sharePanel"); p.hidden = !p.hidden; if (!p.hidden) renderSharePanel(); };
+  setSync("off");
+  const fromLink = new URLSearchParams(location.search).get("list");
+  if (fromLink) {
+    window.history.replaceState(null, "", location.pathname);
+    connect(fromLink.toUpperCase().replace(/[^A-Z0-9]/g, ""), true).then(() => toast("הצטרפת לרשימה המשותפת")).catch(() => {});
+  } else if (listCode) connect(listCode, false).catch(() => setSync("offline"));
+}
 
 /* ---------- boot ---------- */
 renderList();

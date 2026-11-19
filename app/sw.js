@@ -1,5 +1,5 @@
 // שומר את האפליקציה במכשיר כדי שתיפתח מהר וגם בלי אינטרנט בסופר
-const VERSION = "v3";
+const VERSION = "v5";
 const SHELL = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-180.png"];
 
 self.addEventListener("install", e => {
@@ -17,7 +17,7 @@ self.addEventListener("fetch", e => {
   if (e.request.method !== "GET") return;
 
   // תמונות מוצרים: מהמטמון קודם, כדי לחסוך גלישה
-  if (url.hostname === "img.rami-levy.co.il") {
+  if (url.hostname === "img.rami-levy.co.il" || (url.hostname === "www.gstatic.com" && url.pathname.startsWith("/firebasejs/"))) {
     e.respondWith(caches.open("img-" + VERSION).then(async c => {
       const hit = await c.match(e.request);
       if (hit) return hit;
