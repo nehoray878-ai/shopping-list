@@ -17,7 +17,7 @@
 <style>
 :root {
   --bg: #f4f7f2; --surface: #ffffff; --fg: #1d2a22; --muted: #66756b; --line: #dfe6dc;
-  --accent: #2f6b4f; --accent-soft: #e2efe6; --on-accent: #ffffff; --danger: #c2412d; --price: #1d2a22;
+  --accent: #2f6b4f; --accent-soft: #e2efe6; --on-accent: #ffffff; --danger: #c2412d; --price: #1d2a22; --promo: #a23b12; --promo-bg: #fde9dc;
   --font-display: "Rubik", "Arial Hebrew", system-ui, sans-serif;
   --font-body: "Assistant", "Arial Hebrew", system-ui, sans-serif;
   --tabbar: 64px;
@@ -26,7 +26,7 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --bg: #131a16; --surface: #1b241f; --fg: #e6eee8; --muted: #93a398; --line: #2b3830;
-    --accent: #6fbf94; --accent-soft: #23362b; --on-accent: #0f1a14; --danger: #ef7a66; --price: #e6eee8;
+    --accent: #6fbf94; --accent-soft: #23362b; --on-accent: #0f1a14; --danger: #ef7a66; --price: #e6eee8; --promo: #ffb38a; --promo-bg: #3d2418;
     color-scheme: dark;
   }
 }
@@ -132,6 +132,13 @@ ul.items { list-style: none; margin: 0; padding: 0; background: var(--surface); 
 .card .add { width: 38px; height: 38px; border-radius: 12px; border: 0; background: var(--accent); color: var(--on-accent); font-size: 1.4rem; line-height: 1; }
 .card.inlist { border-color: var(--accent); }
 .more { align-self: center; }
+.promo { display: inline-flex; align-self: flex-start; gap: 4px; align-items: center; background: var(--promo-bg); color: var(--promo); border-radius: 8px; padding: 1px 8px; font-size: 0.8rem; font-weight: 700; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.promo.on { background: var(--promo); color: var(--surface); }
+.promo { white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.it { flex-wrap: wrap; }
+.it > .promo { margin-inline-start: 104px; margin-top: -6px; margin-bottom: 2px; }
+.card .was { text-decoration: line-through; color: var(--muted); font-size: 0.8rem; font-weight: 400; font-family: var(--font-body); }
+.onl { color: var(--muted); font-size: 0.75rem; }
 .resinfo { color: var(--muted); font-size: 0.9rem; }
 
 /* tabbar */
@@ -252,7 +259,7 @@ function search(q, dept, limit) {
   if (toks.length) {
     const first = toks[0];
     // מוצרים שמתחילים במילת החיפוש קודם, ואחר כך הקצרים (בדרך כלל המוצר הבסיסי)
-    out.sort((a, b) => (b._s.startsWith(first) - a._s.startsWith(first)) || (a.n.length - b.n.length));
+    out.sort((a, b) => (b._s.startsWith(first) - a._s.startsWith(first)) || ((!a.i) - (!b.i)) || (a.n.length - b.n.length));
   }
   return limit ? out.slice(0, limit) : out;
 }
@@ -306,6 +313,22 @@ function thumb(p) {
   }
   return Object.assign(document.createElement("div"), { className: "thumb ph", textContent: "✎" });
 }
+function promoShort(pr) { const n = Number.isInteger(pr.x) ? String(pr.x) : pr.x.toFixed(2); return pr.q > 1 ? `${pr.q} ב-${n} ₪` : `${n} ₪`; }
+function lineCost(p, qty) {
+  if (!p) return 0;
+  const pr = p.pr;
+  if (pr && qty >= pr.q) return Math.floor(qty / pr.q) * pr.x + (qty % pr.q) * p.p;
+  return p.p * qty;
+}
+function promoTag(p, qty) {
+  const pr = p && p.pr; if (!pr) return null;
+  const el = document.createElement("span");
+  const active = qty != null && qty >= pr.q;
+  el.className = "promo" + (active ? " on" : "");
+  el.title = pr.t;
+  el.textContent = (active ? "✓ מבצע: " : "מבצע: ") + promoShort(pr) + ` עד ${pr.e}`;
+  return el;
+}
 function unitLabel(p) { return p && p.k ? "לק\"ג" : ""; }
 
 function row(it) {
@@ -317,30 +340,40 @@ function row(it) {
   const body = document.createElement("button"); body.type = "button"; body.className = "body"; body.onclick = () => toggle(it.id);
   const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = it.name;
   const meta = document.createElement("span"); meta.className = "meta";
-  meta.textContent = p ? (it.qty > 1 ? `${fmt(p.p)} × ${it.qty} = ${fmt(p.p * it.qty)}` : `${fmt(p.p)} ${unitLabel(p)}`) : "פריט חופשי · אין מחיר";
+  if (p) {
+    const cost = lineCost(p, it.qty);
+    meta.textContent = it.qty > 1 ? `${fmt(p.p)} × ${it.qty} = ${fmt(cost)}` : `${fmt(cost)} ${unitLabel(p)}`;
+    if (p.o) meta.textContent += " · מחיר אונליין";
+  } else meta.textContent = "פריט חופשי · אין מחיר";
   body.append(nm, meta);
+  const tag = promoTag(p, it.qty);
+  if (tag && !it.done) {
+    if (it.qty < p.pr.q) tag.textContent += ` (עוד ${p.pr.q - it.qty})`;
+    li._tag = tag;
+  }
   const st = document.createElement("div"); st.className = "stepper";
   st.innerHTML = `<button type="button" aria-label="הפחת">−</button><span class="q">${it.qty}</span><button type="button" aria-label="הוסף">+</button>`;
   st.children[0].onclick = () => setQty(it.id, it.qty - 1);
   st.children[2].onclick = () => setQty(it.id, it.qty + 1);
   li.append(chk, thumb(p), body);
   if (!it.done) li.append(st);
+  if (li._tag) li.append(li._tag);
   return li;
 }
 
 function deptOf(it) {
   const p = product(it);
   if (p && p.d) return p.d;
-  const m = catalog.products.length ? search(it.name, "", 1)[0] : null;
-  return m && m.d ? m.d : "שונות";
+  const m = catalog.products.length ? search(it.name, "", 30).find(x => x.d) : null;
+  return m ? m.d : "שונות";
 }
 
 function renderList() {
   const list = $("list"); list.textContent = "";
   const open = items.filter(i => !i.done);
   const done = items.filter(i => i.done).sort((a, b) => b.doneAt - a.doneAt);
-  const total = items.reduce((s, i) => { const p = product(i); return s + (p ? p.p * i.qty : 0); }, 0);
-  const left = open.reduce((s, i) => { const p = product(i); return s + (p ? p.p * i.qty : 0); }, 0);
+  const total = items.reduce((s, i) => { const p = product(i); return s + lineCost(p, i.qty); }, 0);
+  const left = open.reduce((s, i) => { const p = product(i); return s + lineCost(p, i.qty); }, 0);
 
   $("total").textContent = fmt(total);
   $("count").textContent = items.length ? `${done.length}/${items.length} בעגלה` + (done.length && left ? ` · נשאר ${fmt(left)}` : "") : "הרשימה ריקה";
@@ -396,7 +429,8 @@ function renderSuggest() {
     const b = document.createElement("button"); b.type = "button"; b.className = "sg" + (i === sgIndex ? " on" : "");
     const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = p.n;
     const pr = document.createElement("span"); pr.className = "pr"; pr.textContent = fmt(p.p);
-    b.append(thumb(p), nm, pr);
+    if (p.pr) { const t = promoTag(p); t.style.marginTop = "2px"; const w = document.createElement("span"); w.style.cssText = "flex:1;min-width:0;display:flex;flex-direction:column"; nm.style.flex = "none"; w.append(nm, t); b.append(thumb(p), w, pr); }
+    else b.append(thumb(p), nm, pr);
     b.onmousedown = e => e.preventDefault();
     b.onclick = () => { addProduct(p); clearAdd(); };
     box.append(b);
@@ -452,6 +486,7 @@ function renderCatalog() {
     const pr = document.createElement("div"); pr.className = "pr"; pr.textContent = fmt(p.p);
     if (p.k) { const s = document.createElement("small"); s.textContent = " לק\"ג"; pr.append(s); }
     r.append(pr);
+    const tag = promoTag(p, it ? it.qty : null);
     if (it) {
       const st = document.createElement("div"); st.className = "stepper";
       st.innerHTML = `<button type="button" aria-label="הפחת">−</button><span class="q">${it.qty}</span><button type="button" aria-label="הוסף">+</button>`;
@@ -463,7 +498,10 @@ function renderCatalog() {
       b.setAttribute("aria-label", "הוסף לרשימה: " + p.n); b.onclick = () => addProduct(p);
       r.append(b);
     }
-    c.append(im, nm, r); grid.append(c);
+    c.append(im, nm);
+    if (tag) c.append(tag);
+    if (p.o) c.append(Object.assign(document.createElement("span"), { className: "onl", textContent: "מחיר אונליין (לא במחירון הסניף)" }));
+    c.append(r); grid.append(c);
   });
   $("more").hidden = res.length <= catShown;
 }
@@ -517,8 +555,13 @@ renderList();
 fetch("catalog.json").then(r => r.json()).then(d => {
   d.products.forEach(p => p._s = norm(p.n + " " + p.b));
   catalog = d; byId = new Map(d.products.map(p => [p.id, p]));
-  $("sub").textContent = `רמי לוי · מחירים מעודכנים ל-${d.updated}`;
-  $("note").textContent = `${d.products.length.toLocaleString("he-IL")} מוצרים במאגר · המחירים מאתר רמי לוי אונליין ועשויים להיות שונים מעט מהמחיר בסניף`;
+  if (d.branch) {
+    $("sub").textContent = `רמי לוי ${d.branch.name} · מחירי הסניף מ-${d.branch.at}`;
+    $("note").textContent = `${d.products.length.toLocaleString("he-IL")} מוצרים · מחירים ומבצעים מהמחירון הרשמי של סניף ${d.branch.name} (לפי חוק שקיפות המחירים). מבצעי מועדון לא כלולים.`;
+  } else {
+    $("sub").textContent = `רמי לוי · מחירים מעודכנים ל-${d.updated}`;
+    $("note").textContent = `${d.products.length.toLocaleString("he-IL")} מוצרים במאגר · המחירים מאתר רמי לוי אונליין ועשויים להיות שונים מעט מהמחיר בסניף`;
+  }
   renderDepts(); renderAll();
 }).catch(() => {
   $("sub").textContent = "רמי לוי · אין חיבור למאגר המוצרים כרגע";
