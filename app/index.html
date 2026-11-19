@@ -132,6 +132,13 @@ ul.items { list-style: none; margin: 0; padding: 0; background: var(--surface); 
 .card .add { width: 38px; height: 38px; border-radius: 12px; border: 0; background: var(--accent); color: var(--on-accent); font-size: 1.4rem; line-height: 1; }
 .card.inlist { border-color: var(--accent); }
 .more { align-self: center; }
+.it > .alt { flex-basis: 100%; margin-inline-start: 104px; max-width: calc(100% - 104px); display: flex; align-items: center; gap: 6px; flex-wrap: wrap; background: var(--accent-soft); border-radius: 10px; padding: 6px 10px; font-size: 0.84rem; margin-bottom: 2px; }
+.alt .t { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.alt .t b { font-weight: 700; }
+.alt button { border: 0; border-radius: 8px; font: inherit; font-weight: 700; padding: 4px 10px; }
+.alt .sw { background: var(--accent); color: var(--on-accent); }
+.alt .no { background: transparent; color: var(--muted); padding: 4px 6px; }
+.bk { display: flex; gap: 8px; flex-wrap: wrap; }
 .lists { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .lpick { flex: 1; min-width: 0; position: relative; display: flex; }
 .lpick select { flex: 1; min-width: 0; appearance: none; -webkit-appearance: none; font: inherit; font-family: var(--font-display); font-weight: 500; font-size: 1.05rem; color: var(--fg); background: var(--surface); border: 1.5px solid var(--line); border-radius: 14px; padding: 11px 14px 11px 40px; }
@@ -383,7 +390,7 @@ function inList(pid) { return items.find(i => i.pid === pid && !i.done && listOf
 
 function addProduct(p, qty = 1) {
   const ex = inList(p.id);
-  if (ex) { ex.qty += qty; toast(`${p.n} – כמות ${ex.qty}`); }
+  if (ex) { ex.qty = +(ex.qty + qty).toFixed(2); toast(`${p.n} – כמות ${qtyText(ex.qty, p)}`); }
   else {
     const old = items.find(i => i.pid === p.id && i.done && listOf(i) === currentList);
     if (old) { old.done = false; old.doneAt = null; old.qty = qty; old.createdAt = Date.now(); }
@@ -438,7 +445,7 @@ function lineCost(p, qty) {
   const pr = p.pr;
   if (!pr || !promoOk(pr)) return p.p * qty;
   const eligible = pr.l ? Math.min(qty, pr.l) : qty;
-  const bundles = Math.floor(eligible / pr.q);
+  const bundles = (isKg(p) && pr.q === 1) ? eligible : Math.floor(eligible / pr.q);
   return bundles * pr.x + (qty - bundles * pr.q) * p.p;
 }
 function promoTag(p, qty) {
@@ -458,6 +465,54 @@ function promoTag(p, qty) {
 }
 function unitLabel(p) { return p && p.k ? "לק\"ג" : ""; }
 
+const isKg = p => !!(p && p.k);
+const stepOf = p => isKg(p) ? 0.5 : 1;
+const qn = q => String(+(+q).toFixed(2));
+const qtyText = (q, p) => isKg(p) ? `${qn(q)} ק"ג` : String(q);
+const qtySuffix = (q, p) => isKg(p) ? ` – ${qn(q)} ק"ג` : (q > 1 ? " ×" + q : "");
+
+/* ---------- cheaper alternative ---------- */
+function unitNorm(p) {
+  if (!p || !p.u || !p.uu) return null;
+  const uu = p.uu.replace(/\s+/g, " ").trim();
+  if (uu === "100 גרם") return { v: p.u, k: "g" };
+  if (uu === "קילוגרם") return { v: p.u / 10, k: "g" };
+  if (uu === "100 מיליליטר") return { v: p.u, k: "ml" };
+  if (uu === "ליטר") return { v: p.u / 10, k: "ml" };
+  if (uu === "יחידות") return { v: p.u, k: "u" };
+  return null;
+}
+const UNIT_TXT = { g: "ל-100 גרם", ml: "ל-100 מ\"ל", u: "ליחידה" };
+let groupIdx = null;
+function byGroup(g) {
+  if (!groupIdx) { groupIdx = new Map(); for (const c of catalog.products) if (c.g && c.u && c.i) { if (!groupIdx.has(c.g)) groupIdx.set(c.g, []); groupIdx.get(c.g).push(c); } }
+  return groupIdx.get(g) || [];
+}
+const firstWord = n => norm(n).split(" ")[0];
+function cheaperAlt(p) {
+  const a = unitNorm(p); if (!a || !p.g) return null;
+  const fw = firstWord(p.n); let best = null, bu = a.v * 0.9;   // לפחות 10% זול יותר
+  for (const c of byGroup(p.g)) {
+    if (c.id === p.id || firstWord(c.n) !== fw || c.p < p.p * 0.4 || c.p > p.p * 2.5) continue;
+    const b = unitNorm(c); if (!b || b.k !== a.k) continue;
+    if (b.v < bu) { bu = b.v; best = c; }
+  }
+  return best ? { c: best, save: Math.round((1 - bu / a.v) * 100), unit: UNIT_TXT[a.k] } : null;
+}
+function altRow(it, p) {
+  if (it.done || it.noAlt || !p) return null;
+  const alt = cheaperAlt(p); if (!alt) return null;
+  const box = document.createElement("div"); box.className = "alt";
+  const t = document.createElement("span"); t.className = "t";
+  t.append("💡 זול יותר: ", Object.assign(document.createElement("b"), { textContent: alt.c.n }), ` · ${fmt(alt.c.p)} (חיסכון ~${alt.save}% ${alt.unit})`);
+  const sw = document.createElement("button"); sw.type = "button"; sw.className = "sw"; sw.textContent = "להחליף";
+  sw.onclick = () => { it.pid = alt.c.id; it.name = alt.c.n; save(); renderAll(); toast(`הוחלף ל: ${alt.c.n}`); };
+  const no = document.createElement("button"); no.type = "button"; no.className = "no"; no.textContent = "✕"; no.setAttribute("aria-label", "לא תודה");
+  no.onclick = () => { it.noAlt = true; save(); renderAll(); };
+  box.append(t, sw, no);
+  return box;
+}
+
 function row(it) {
   const p = product(it);
   const li = document.createElement("li"); li.className = "it" + (it.done ? " done" : "");
@@ -469,22 +524,24 @@ function row(it) {
   const meta = document.createElement("span"); meta.className = "meta";
   if (p) {
     const cost = lineCost(p, it.qty);
-    meta.textContent = it.qty > 1 ? `${fmt(p.p)} × ${it.qty} = ${fmt(cost)}` : `${fmt(cost)} ${unitLabel(p)}`;
+    meta.textContent = isKg(p) ? `${fmt(p.p)} לק"ג × ${qn(it.qty)} ק"ג = ${fmt(cost)}`
+      : it.qty > 1 ? `${fmt(p.p)} × ${it.qty} = ${fmt(cost)}` : `${fmt(cost)}`;
     if (p.o) meta.textContent += " · מחיר אונליין";
   } else meta.textContent = "פריט חופשי · אין מחיר";
   body.append(nm, meta);
   const tag = promoTag(p, it.qty);
   if (tag && !it.done) {
-    if (it.qty < p.pr.q) tag.firstChild.textContent += ` (עוד ${p.pr.q - it.qty})`;
+    if (!isKg(p) && it.qty < p.pr.q) tag.firstChild.textContent += ` (עוד ${p.pr.q - it.qty})`;
     li._tag = tag;
   }
   const st = document.createElement("div"); st.className = "stepper";
-  st.innerHTML = `<button type="button" aria-label="הפחת">−</button><span class="q">${it.qty}</span><button type="button" aria-label="הוסף">+</button>`;
-  st.children[0].onclick = () => setQty(it.id, it.qty - 1);
-  st.children[2].onclick = () => setQty(it.id, it.qty + 1);
+  st.innerHTML = `<button type="button" aria-label="הפחת">−</button><span class="q">${qtyText(it.qty, p)}</span><button type="button" aria-label="הוסף">+</button>`;
+  st.children[0].onclick = () => setQty(it.id, +(it.qty - stepOf(p)).toFixed(2));
+  st.children[2].onclick = () => setQty(it.id, +(it.qty + stepOf(p)).toFixed(2));
   li.append(chk, thumb(p), body);
   if (!it.done) li.append(st);
   if (li._tag) li.append(li._tag);
+  const alt = altRow(it, p); if (alt) li.append(alt);
   return li;
 }
 
@@ -680,9 +737,9 @@ function cardFor(p) {
   const tag = promoTag(p, it ? it.qty : null);
   if (it) {
     const st = document.createElement("div"); st.className = "stepper";
-    st.innerHTML = `<button type="button" aria-label="הפחת">−</button><span class="q">${it.qty}</span><button type="button" aria-label="הוסף">+</button>`;
-    st.children[0].onclick = () => setQty(it.id, it.qty - 1);
-    st.children[2].onclick = () => setQty(it.id, it.qty + 1);
+    st.innerHTML = `<button type="button" aria-label="הפחת">−</button><span class="q">${qtyText(it.qty, p)}</span><button type="button" aria-label="הוסף">+</button>`;
+    st.children[0].onclick = () => setQty(it.id, +(it.qty - stepOf(p)).toFixed(2));
+    st.children[2].onclick = () => setQty(it.id, +(it.qty + stepOf(p)).toFixed(2));
     r.append(st);
   } else {
     const b = document.createElement("button"); b.type = "button"; b.className = "add"; b.textContent = "+";
@@ -798,7 +855,7 @@ function renderHistory() {
   if (!history.length) {
     const e = document.createElement("div"); e.className = "empty";
     e.innerHTML = "<strong>עוד אין קניות שמורות</strong><span>בסוף קנייה לוחצים על \"סיימתי קנייה\" ברשימה, והקנייה נשמרת כאן עם הסכום.</span>";
-    box.append(e); return;
+    box.append(e, backupPanel()); return;
   }
   const now = monthKey(Date.now());
   const sum = k => history.filter(t => monthKey(t.t) === k).reduce((s, t) => s + t.total, 0);
@@ -821,7 +878,7 @@ function renderHistory() {
     const det = document.createElement("div"); det.className = "det"; det.hidden = true;
     t.items.forEach(x => {
       const li = document.createElement("div"); li.className = "li";
-      li.innerHTML = "<span></span><span></span>"; li.children[0].textContent = `${x.name}${x.qty > 1 ? " ×" + x.qty : ""}`; li.children[1].textContent = x.cost ? fmt(x.cost) : "";
+      li.innerHTML = "<span></span><span></span>"; li.children[0].textContent = x.name + qtySuffix(x.qty, x.pid != null ? byId.get(x.pid) : null); li.children[1].textContent = x.cost ? fmt(x.cost) : "";
       det.append(li);
     });
     const again = document.createElement("button"); again.type = "button"; again.className = "btn ghost"; again.textContent = "להוסיף שוב את כל הקנייה לרשימה";
@@ -834,6 +891,54 @@ function renderHistory() {
     head.onclick = () => { det.hidden = !det.hidden; };
     w.append(head, det); box.append(w);
   });
+  box.append(backupPanel());
+}
+
+/* ---------- backup & restore ---------- */
+const BACKUP_KEYS = ["shopping-list-v2", "lists", "cur-list", "favs", "history", "dept-order", "big-text", "closed-groups"];
+function backupPanel() {
+  const panel = document.createElement("div"); panel.className = "panel";
+  panel.innerHTML = "<h3>גיבוי ושחזור</h3><p>כל הנתונים (רשימות, קבועים והיסטוריה) שמורים רק בטלפון הזה. כדאי לשמור גיבוי מדי פעם: בקובץים, בדרייב או בהודעה לעצמכם בוואטסאפ.</p>";
+  const row = document.createElement("div"); row.className = "bk";
+  const ex = document.createElement("button"); ex.type = "button"; ex.className = "btn"; ex.textContent = "שמירת גיבוי";
+  ex.onclick = exportBackup;
+  const im = document.createElement("label"); im.className = "btn ghost"; im.textContent = "שחזור מגיבוי"; im.style.cursor = "pointer";
+  const file = document.createElement("input"); file.type = "file"; file.accept = "application/json,.json"; file.hidden = true; file.id = "restoreFile";
+  im.append(file);
+  const msg = document.createElement("div");
+  file.onchange = async () => {
+    const f = file.files[0]; if (!f) return;
+    let data;
+    try { data = JSON.parse(await f.text()); } catch { data = null; }
+    if (!data || data.app !== "shopping-list" || !data.data) { msg.className = "err"; msg.textContent = "הקובץ הזה הוא לא גיבוי של רשימת הקניות."; file.value = ""; return; }
+    msg.className = ""; msg.textContent = "";
+    const when = new Date(data.at).toLocaleDateString("he-IL");
+    const p = document.createElement("p"); p.textContent = `גיבוי מ-${when}. השחזור יחליף את כל מה שיש עכשיו בטלפון.`;
+    const ok = document.createElement("button"); ok.type = "button"; ok.className = "btn"; ok.textContent = "כן, לשחזר";
+    ok.onclick = () => {
+      try { for (const k of BACKUP_KEYS) { const v = data.data[k]; if (v == null) localStorage.removeItem(k); else localStorage.setItem(k, v); } } catch {}
+      location.reload();
+    };
+    const no = document.createElement("button"); no.type = "button"; no.className = "btn ghost"; no.textContent = "ביטול";
+    no.onclick = () => { msg.textContent = ""; file.value = ""; };
+    const r2 = document.createElement("div"); r2.className = "bk"; r2.append(ok, no);
+    msg.append(p, r2);
+  };
+  row.append(ex, im); panel.append(row, msg);
+  return panel;
+}
+async function exportBackup() {
+  const data = { app: "shopping-list", v: 1, at: Date.now(), data: {} };
+  try { for (const k of BACKUP_KEYS) data.data[k] = localStorage.getItem(k); } catch {}
+  const d = new Date(); const name = `shopping-backup-${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}.json`;
+  const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+  const file = new File([blob], name, { type: "application/json" });
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "גיבוי רשימת הקניות" }); return; }
+  } catch (e) { if (e && e.name === "AbortError") return; }
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+  toast("הגיבוי נשמר בהורדות");
 }
 
 /* ---------- weekly deals ---------- */
@@ -876,7 +981,7 @@ function listText() {
   const lines = [`🛒 ${lists.length > 1 ? curName() : "רשימת קניות"}${catalog.branch ? " – רמי לוי " + catalog.branch.name : ""}`];
   for (const [d, its] of [...groups.entries()].sort((a, b) => rank(a[0]) - rank(b[0]))) {
     lines.push("", `*${d}*`);
-    its.sort((a, b) => coll.compare(a.name, b.name)).forEach(i => lines.push(`• ${i.name}${i.qty > 1 ? " ×" + i.qty : ""}`));
+    its.sort((a, b) => coll.compare(a.name, b.name)).forEach(i => lines.push(`• ${i.name}${qtySuffix(i.qty, product(i))}`));
   }
   const total = open.reduce((s, i) => s + lineCost(product(i), i.qty), 0);
   if (total) lines.push("", `סה"כ משוער: ${fmt(total)}`);
@@ -1102,7 +1207,7 @@ $("listEdit").onclick = () => { if (!$("listPanel").hidden) { $("listPanel").hid
 renderList();
 fetch("catalog.json").then(r => r.json()).then(d => {
   d.products.forEach(p => p._s = norm(p.n + " " + p.b));
-  catalog = d; byId = new Map(d.products.map(p => [p.id, p]));
+  catalog = d; byId = new Map(d.products.map(p => [p.id, p])); groupIdx = null;
   if (d.branch) {
     $("sub").textContent = `רמי לוי ${d.branch.name} · מחירי הסניף מ-${d.branch.at}`;
     $("note").textContent = `${d.products.length.toLocaleString("he-IL")} מוצרים · מחירים ומבצעים מהמחירון הרשמי של סניף ${d.branch.name} (לפי חוק שקיפות המחירים). מבצעי מועדון לא כלולים.`;

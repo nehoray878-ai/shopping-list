@@ -62,6 +62,7 @@ def fetch_online():
                 "n": p.get("name", "").strip(),
                 "p": price,
                 "d": (p.get("department") or {}).get("name", ""),
+                "g": ((p.get("subGroup") or {}).get("name") or (p.get("group") or {}).get("name") or ""),
                 "i": (p.get("images") or {}).get("small") or "",
                 "k": 1 if (p.get("prop") or {}).get("by_kilo") else 0,
             }
@@ -124,6 +125,8 @@ def parse_prices(xml):
                     "n": (el.findtext("ItemName") or "").strip(),
                     "p": float(el.findtext("ItemPrice") or 0),
                     "k": 1 if (el.findtext("bIsWeighted") or "0").strip() == "1" else 0,
+                    "u": float(el.findtext("UnitOfMeasurePrice") or 0),
+                    "uu": (el.findtext("UnitOfMeasure") or "").strip(),
                 }
             except ValueError:
                 pass
@@ -230,6 +233,8 @@ def main():
         bc = branch_code(p["b"])
         if bc:
             p["p"] = prices[bc]["p"]
+            if prices[bc]["u"] > 0 and prices[bc]["uu"]:
+                p["u"], p["uu"] = prices[bc]["u"], prices[bc]["uu"]   # מחיר ליחידת מידה, להשוואה
             known.add(bc)
         elif prices:
             p["o"] = 1          # לא במחירון הסניף: מחיר האתר
