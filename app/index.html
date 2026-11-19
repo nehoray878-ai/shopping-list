@@ -132,6 +132,13 @@ ul.items { list-style: none; margin: 0; padding: 0; background: var(--surface); 
 .card .add { width: 38px; height: 38px; border-radius: 12px; border: 0; background: var(--accent); color: var(--on-accent); font-size: 1.4rem; line-height: 1; }
 .card.inlist { border-color: var(--accent); }
 .more { align-self: center; }
+.lists { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lpick { flex: 1; min-width: 0; position: relative; display: flex; }
+.lpick select { flex: 1; min-width: 0; appearance: none; -webkit-appearance: none; font: inherit; font-family: var(--font-display); font-weight: 500; font-size: 1.05rem; color: var(--fg); background: var(--surface); border: 1.5px solid var(--line); border-radius: 14px; padding: 11px 14px 11px 40px; }
+.lpick::after { content: "▾"; position: absolute; inset-inline-end: 14px; top: 50%; transform: translateY(-50%); color: var(--accent); pointer-events: none; }
+.lpick select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.panel input.txt { font: inherit; font-size: 1.05rem; border: 1.5px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--fg); padding: 10px 12px; min-width: 0; }
+.panel .sugg { display: flex; gap: 6px; flex-wrap: wrap; }
 html.big { font-size: 19px; }
 html.big .thumb { width: 56px; height: 56px; }
 html.big .stepper button { width: 44px; height: 44px; }
@@ -239,6 +246,11 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
   <!-- LIST VIEW -->
   <div id="viewList">
     <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="lists">
+        <div class="lpick"><select id="listSel" aria-label="בחירת רשימה"></select></div>
+        <button class="toolbtn" id="listEdit" type="button">שינוי שם / מחיקה</button>
+      </div>
+      <div class="panel" id="listPanel" hidden></div>
       <div class="summary">
         <div><div class="lbl">סכום משוער</div><div class="total" id="total">₪0.00</div></div>
         <div class="count" id="count">0 פריטים</div>
@@ -331,6 +343,14 @@ const fmt = n => "₪" + n.toFixed(2);
 let catalog = { products: [], imgBase: "", updated: "" };
 let byId = new Map();
 let items = load();
+/* ---------- separate lists ---------- */
+let lists = (() => { try { const l = JSON.parse(localStorage.getItem("lists") || "null"); if (Array.isArray(l) && l.length) return l; } catch {} return [{ id: "main", name: "הרשימה שלי" }]; })();
+let currentList = (() => { try { return localStorage.getItem("cur-list") || "main"; } catch { return "main"; } })();
+if (!lists.some(l => l.id === currentList)) currentList = lists[0].id;
+const listOf = i => i.list || "main";
+const mineAll = () => items.filter(i => listOf(i) === currentList);
+const curName = () => (lists.find(l => l.id === currentList) || {}).name || "";
+function saveLists() { try { localStorage.setItem("lists", JSON.stringify(lists)); localStorage.setItem("cur-list", currentList); } catch {} }
 let deptFilter = "";
 let catShown = 40;
 let confirmClear = false;
@@ -359,23 +379,23 @@ function search(q, dept, limit) {
 
 /* ---------- list actions ---------- */
 function product(it) { return it.pid != null ? byId.get(it.pid) : null; }
-function inList(pid) { return items.find(i => i.pid === pid && !i.done); }
+function inList(pid) { return items.find(i => i.pid === pid && !i.done && listOf(i) === currentList); }
 
 function addProduct(p, qty = 1) {
   const ex = inList(p.id);
   if (ex) { ex.qty += qty; toast(`${p.n} – כמות ${ex.qty}`); }
   else {
-    const old = items.find(i => i.pid === p.id && i.done);
+    const old = items.find(i => i.pid === p.id && i.done && listOf(i) === currentList);
     if (old) { old.done = false; old.doneAt = null; old.qty = qty; old.createdAt = Date.now(); }
-    else items.push({ id: newId(), pid: p.id, name: p.n, qty, done: false, createdAt: Date.now(), doneAt: null });
-    toast(`נוסף: ${p.n}`);
+    else items.push({ id: newId(), list: currentList, pid: p.id, name: p.n, qty, done: false, createdAt: Date.now(), doneAt: null });
+    toast(lists.length > 1 ? `נוסף ל"${curName()}": ${p.n}` : `נוסף: ${p.n}`);
   }
   save(); renderAll();
 }
 function addFree(name) {
   name = name.trim(); if (!name) return;
-  if (items.some(i => !i.done && i.pid == null && i.name === name)) { toast(`"${name}" כבר ברשימה`); return; }
-  items.push({ id: newId(), pid: null, name, qty: 1, done: false, createdAt: Date.now(), doneAt: null });
+  if (mineAll().some(i => !i.done && i.pid == null && i.name === name)) { toast(`"${name}" כבר ברשימה`); return; }
+  items.push({ id: newId(), list: currentList, pid: null, name, qty: 1, done: false, createdAt: Date.now(), doneAt: null });
   save(); renderAll();
 }
 function setQty(id, q) {
@@ -530,23 +550,25 @@ function deptOf(it) {
 
 function renderList() {
   const list = $("list"); list.textContent = "";
-  const open = items.filter(i => !i.done);
-  const done = items.filter(i => i.done).sort((a, b) => b.doneAt - a.doneAt);
-  listBase = items.reduce((s, i) => { const p = product(i); return s + (p ? p.p * i.qty : 0); }, 0);
-  const total = items.reduce((s, i) => { const p = product(i); return s + lineCost(p, i.qty); }, 0);
+  renderListPicker();
+  const all = mineAll();
+  const open = all.filter(i => !i.done);
+  const done = all.filter(i => i.done).sort((a, b) => b.doneAt - a.doneAt);
+  listBase = all.reduce((s, i) => { const p = product(i); return s + (p ? p.p * i.qty : 0); }, 0);
+  const total = all.reduce((s, i) => { const p = product(i); return s + lineCost(p, i.qty); }, 0);
   const left = open.reduce((s, i) => { const p = product(i); return s + lineCost(p, i.qty); }, 0);
 
   $("total").textContent = fmt(total);
-  $("count").textContent = items.length ? `${done.length}/${items.length} בעגלה` + (done.length && left ? ` · נשאר ${fmt(left)}` : "") : "הרשימה ריקה";
-  $("bar").style.width = items.length ? (done.length / items.length * 100) + "%" : "0";
+  $("count").textContent = all.length ? `${done.length}/${all.length} בעגלה` + (done.length && left ? ` · נשאר ${fmt(left)}` : "") : "הרשימה ריקה";
+  $("bar").style.width = all.length ? (done.length / all.length * 100) + "%" : "0";
   $("badge").textContent = open.length; $("badge").hidden = !open.length;
 
   if (!open.length) {
     const e = document.createElement("div"); e.className = "empty";
-    e.innerHTML = items.length
+    e.innerHTML = all.length
       ? "<strong>הכול בעגלה!</strong><span>אפשר לנקות את העגלה ולהתחיל רשימה חדשה.</span>"
       : "<strong>הרשימה ריקה</strong><span>כתבו שם של מוצר בשורה למעלה, או חפשו במאגר המוצרים.</span>";
-    if (!items.length) { const b = document.createElement("button"); b.className = "btn"; b.type = "button"; b.textContent = "לחיפוש במאגר המוצרים"; b.onclick = () => showView("catalog"); e.append(b); }
+    if (!all.length) { const b = document.createElement("button"); b.className = "btn"; b.type = "button"; b.textContent = "לחיפוש במאגר המוצרים"; b.onclick = () => showView("catalog"); e.append(b); }
     list.append(e);
   }
 
@@ -579,7 +601,7 @@ function renderList() {
     b.textContent = confirmClear ? "בטוח? לחצו שוב" : "סיימתי קנייה";
     b.onclick = () => {
       if (!confirmClear) { confirmClear = true; renderList(); setTimeout(() => { if (confirmClear) { confirmClear = false; renderList(); } }, 4000); return; }
-      confirmClear = false; const n = done.length; saveTrip(done); items = items.filter(i => !i.done); save(); renderAll(); toast(`הקנייה נשמרה בהיסטוריה (${n} פריטים)`);
+      confirmClear = false; const n = done.length; saveTrip(done); items = items.filter(i => !(i.done && listOf(i) === currentList)); save(); renderAll(); toast(`הקנייה נשמרה בהיסטוריה (${n} פריטים)`);
     };
     head.append(h, b);
     const ul = document.createElement("ul"); ul.className = "items"; done.forEach(i => ul.append(row(i)));
@@ -805,7 +827,7 @@ function renderHistory() {
     const again = document.createElement("button"); again.type = "button"; again.className = "btn ghost"; again.textContent = "להוסיף שוב את כל הקנייה לרשימה";
     again.onclick = () => {
       let n = 0;
-      for (const x of t.items) { const p = x.pid != null ? byId.get(x.pid) : null; if (p) { if (!inList(p.id)) { addProduct(p, x.qty); n++; } } else if (!items.some(i => !i.done && i.name === x.name)) { addFree(x.name); n++; } }
+      for (const x of t.items) { const p = x.pid != null ? byId.get(x.pid) : null; if (p) { if (!inList(p.id)) { addProduct(p, x.qty); n++; } } else if (!mineAll().some(i => !i.done && i.name === x.name)) { addFree(x.name); n++; } }
       toast(n ? `נוספו ${n} מוצרים לרשימה` : "כל המוצרים כבר ברשימה");
     };
     det.append(again);
@@ -847,11 +869,11 @@ $("bigBtn").onclick = () => { const on = !document.documentElement.classList.con
 
 /* ---------- WhatsApp ---------- */
 function listText() {
-  const open = items.filter(i => !i.done);
+  const open = mineAll().filter(i => !i.done);
   const groups = new Map();
   for (const it of open) { const d = deptOf(it); if (!groups.has(d)) groups.set(d, []); groups.get(d).push(it); }
   const coll = new Intl.Collator("he");
-  const lines = [`🛒 רשימת קניות${catalog.branch ? " – רמי לוי " + catalog.branch.name : ""}`];
+  const lines = [`🛒 ${lists.length > 1 ? curName() : "רשימת קניות"}${catalog.branch ? " – רמי לוי " + catalog.branch.name : ""}`];
   for (const [d, its] of [...groups.entries()].sort((a, b) => rank(a[0]) - rank(b[0]))) {
     lines.push("", `*${d}*`);
     its.sort((a, b) => coll.compare(a.name, b.name)).forEach(i => lines.push(`• ${i.name}${i.qty > 1 ? " ×" + i.qty : ""}`));
@@ -861,7 +883,7 @@ function listText() {
   return lines.join("\n");
 }
 $("waBtn").onclick = () => {
-  if (!items.some(i => !i.done)) { toast("הרשימה ריקה, אין מה לשלוח"); return; }
+  if (!mineAll().some(i => !i.done)) { toast("הרשימה ריקה, אין מה לשלוח"); return; }
   const a = document.createElement("a"); a.href = "https://wa.me/?text=" + encodeURIComponent(listText()); a.target = "_blank"; a.rel = "noopener";
   document.body.append(a); a.click(); a.remove();
 };
@@ -915,7 +937,7 @@ async function ensureFirebase() {
   return db;
 }
 const itemsRef = code => db.collection("lists").doc(code).collection("items");
-function toDoc(it) { return { pid: it.pid ?? null, name: it.name, qty: it.qty, done: !!it.done, createdAt: it.createdAt || Date.now(), doneAt: it.doneAt ?? null }; }
+function toDoc(it) { return { list: it.list || "main", pid: it.pid ?? null, name: it.name, qty: it.qty, done: !!it.done, createdAt: it.createdAt || Date.now(), doneAt: it.doneAt ?? null }; }
 const same = (a, b) => JSON.stringify(toDoc(a)) === JSON.stringify(toDoc(b));
 
 // כל שינוי ברשימה עובר דרך save(): שולחים לענן רק את מה שהשתנה
@@ -1016,6 +1038,65 @@ if (FIREBASE_CONFIG) {
     connect(fromLink.toUpperCase().replace(/[^A-Z0-9]/g, ""), true).then(() => toast("הצטרפת לרשימה המשותפת")).catch(() => {});
   } else if (listCode) connect(listCode, false).catch(() => setSync("offline"));
 }
+
+/* ---------- list picker ---------- */
+function renderListPicker() {
+  const sel = $("listSel"); sel.textContent = "";
+  for (const l of lists) {
+    const n = items.filter(i => listOf(i) === l.id && !i.done).length;
+    sel.append(new Option(`📋 ${l.name}${n ? ` (${n})` : ""}`, l.id, false, l.id === currentList));
+  }
+  sel.append(new Option("＋ רשימה חדשה…", "__new"));
+  sel.value = currentList;
+}
+function switchList(id) {
+  currentList = id; saveLists(); confirmClear = false; $("listPanel").hidden = true; renderAll(); window.scrollTo(0, 0);
+}
+$("listSel").onchange = e => {
+  const v = e.target.value;
+  if (v === "__new") { e.target.value = currentList; openListPanel("new"); return; }
+  switchList(v);
+};
+function openListPanel(mode) {
+  const panel = $("listPanel"); panel.textContent = ""; panel.hidden = false;
+  const h = document.createElement("h3");
+  const inp = document.createElement("input"); inp.className = "txt"; inp.id = "listName"; inp.maxLength = 30; inp.autocomplete = "off";
+  const row = document.createElement("div"); row.className = "row2";
+  const cancel = document.createElement("button"); cancel.type = "button"; cancel.className = "btn ghost"; cancel.textContent = "ביטול";
+  cancel.onclick = () => { panel.hidden = true; };
+  const ok = document.createElement("button"); ok.type = "button"; ok.className = "btn";
+  if (mode === "new") {
+    h.textContent = "רשימה חדשה"; inp.placeholder = "למשל: קנייה לשבת"; ok.textContent = "יצירת הרשימה";
+    const sugg = document.createElement("div"); sugg.className = "sugg";
+    ["קנייה לשבת", "קנייה באמצע השבוע", "קנייה גדולה לחודש", "פארם וניקיון"].filter(n => !lists.some(l => l.name === n)).forEach(n => {
+      const c = document.createElement("button"); c.type = "button"; c.className = "dchip"; c.textContent = n; c.onclick = () => { inp.value = n; inp.focus(); }; sugg.append(c);
+    });
+    ok.onclick = () => {
+      const name = inp.value.trim(); if (!name) { inp.focus(); return; }
+      const id = newId(); lists.push({ id, name }); switchList(id); toast(`נוצרה רשימה: ${name}`);
+    };
+    row.append(cancel, ok); panel.append(h, inp, sugg, row);
+  } else {
+    h.textContent = "עריכת הרשימה"; inp.value = curName(); ok.textContent = "שמירת השם";
+    ok.onclick = () => { const name = inp.value.trim(); if (!name) return; lists.find(l => l.id === currentList).name = name; saveLists(); panel.hidden = true; renderAll(); toast("השם נשמר"); };
+    row.append(cancel, ok); panel.append(h, inp, row);
+    if (lists.length > 1) {
+      const n = mineAll().length;
+      const del = document.createElement("button"); del.type = "button"; del.className = "linkbtn"; del.textContent = `מחיקת הרשימה${n ? ` ו-${n} הפריטים שבה` : ""}`;
+      let sure = false;
+      del.onclick = () => {
+        if (!sure) { sure = true; del.textContent = "בטוח? אי אפשר לבטל"; del.classList.add("confirm"); return; }
+        const name = curName();
+        items = items.filter(i => listOf(i) !== currentList); save();
+        lists = lists.filter(l => l.id !== currentList); switchList(lists[0].id); toast(`הרשימה "${name}" נמחקה`);
+      };
+      panel.append(del);
+    } else panel.append(Object.assign(document.createElement("p"), { textContent: "זו הרשימה היחידה, אז אי אפשר למחוק אותה. אפשר ליצור עוד רשימות מהתפריט למעלה." }));
+  }
+  inp.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); ok.click(); } };
+  setTimeout(() => inp.focus(), 50);
+}
+$("listEdit").onclick = () => { if (!$("listPanel").hidden) { $("listPanel").hidden = true; return; } openListPanel("edit"); };
 
 /* ---------- boot ---------- */
 renderList();
