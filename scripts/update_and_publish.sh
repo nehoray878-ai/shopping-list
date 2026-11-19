@@ -2,6 +2,7 @@
 # מעדכן את מחירי רמי לוי מהמחשב הזה ומעלה ל-GitHub. האפליקציה מתעדכנת אחרי דקה-שתיים.
 set -e
 cd "$(dirname "$0")/.."
+git pull -q --rebase
 python3 scripts/update_catalog.py
 git add app/catalog.json
 if git diff --cached --quiet; then echo "אין שינויים במחירים"; exit 0; fi

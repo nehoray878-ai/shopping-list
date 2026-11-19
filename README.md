@@ -13,10 +13,13 @@ python3 -m http.server 8765 --directory app
 ```
 ואז לפתוח http://localhost:8765
 
-## עדכון מחירים ידני
-```
-python3 scripts/update_catalog.py
-```
+## עדכון מחירים
+המחשב מעדכן את המחירים אוטומטית כל בוקר ב-07:00 (או כשהוא מתעורר, אם היה כבוי) ומעלה ל-GitHub.
+- היומן: `~/.shopping-list-updater/update.log`
+- לעדכון ידני מיידי: `scripts/update_and_publish.sh`
+- לביטול העדכון האוטומטי: `launchctl bootout gui/$(id -u)/com.shoppinglist.prices && rm ~/Library/LaunchAgents/com.shoppinglist.prices.plist`
+
+רמי לוי חוסם את שרתי GitHub, ולכן ההורדה נעשית מהמחשב הביתי ולא מ-GitHub.
 
 ## הערות
 - המחירים נלקחים מרמי לוי אונליין (חנות 331, ניתן לשנות ב-`STORE` בסקריפט) ועשויים להיות שונים מעט מהמחיר על המדף בסניף עפולה.
