@@ -132,6 +132,24 @@ ul.items { list-style: none; margin: 0; padding: 0; background: var(--surface); 
 .card .add { width: 38px; height: 38px; border-radius: 12px; border: 0; background: var(--accent); color: var(--on-accent); font-size: 1.4rem; line-height: 1; }
 .card.inlist { border-color: var(--accent); }
 .more { align-self: center; }
+.group h2.tog { cursor: pointer; user-select: none; }
+.group h2 .chev { display: inline-block; transition: transform .2s; margin-inline-end: 4px; }
+.group.closed h2 .chev { transform: rotate(90deg); }
+.group.closed ul { display: none; }
+.group h2 .sub { font-family: var(--font-body); font-weight: 600; font-variant-numeric: tabular-nums; }
+.tools { display: flex; justify-content: flex-end; margin-top: -8px; }
+.toolbtn { border: 0; background: transparent; color: var(--accent); font-weight: 600; font-size: 0.92rem; padding: 4px 6px; border-radius: 8px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.panel h3 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 1.05rem; }
+.panel p { margin: 0; color: var(--muted); font-size: 0.88rem; }
+.olist { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.olist li { display: flex; align-items: center; gap: 8px; background: var(--bg); border-radius: 10px; padding: 4px 6px 4px 4px; }
+.olist .num { width: 24px; text-align: center; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 0.85rem; }
+.olist .lbl { flex: 1; min-width: 0; }
+.olist button { width: 38px; height: 38px; border: 0; border-radius: 10px; background: var(--accent-soft); color: var(--accent); font-size: 1.1rem; font-weight: 700; }
+.olist button:disabled { opacity: .3; }
+.panel .row2 { display: flex; gap: 8px; justify-content: space-between; flex-wrap: wrap; }
+.btn.ghost { background: transparent; color: var(--accent); border: 1.5px solid var(--line); }
 .promo { display: inline-flex; align-self: flex-start; gap: 4px; align-items: center; background: var(--promo-bg); color: var(--promo); border-radius: 8px; padding: 1px 8px; font-size: 0.8rem; font-weight: 700; line-height: 1.5; font-variant-numeric: tabular-nums; }
 .promo.on { background: var(--promo); color: var(--surface); }
 .promo { white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
@@ -184,6 +202,8 @@ ul.items { list-style: none; margin: 0; padding: 0; background: var(--surface); 
         <div class="count" id="count">0 פריטים</div>
         <div class="bar"><i id="bar"></i></div>
       </div>
+      <div class="tools"><button class="toolbtn" id="orderBtn" type="button">⇅ סדר המחלקות</button></div>
+      <div class="panel" id="orderPanel" hidden></div>
       <div class="addbar">
         <div style="position:relative">
           <form class="search" id="addForm" autocomplete="off">
@@ -361,6 +381,59 @@ function row(it) {
   return li;
 }
 
+/* ---------- aisle order ---------- */
+const DEFAULT_ORDER = [
+  "פירות ירקות ופיצוחים",
+  "שימורים בישול ואפיה", "קטניות ודגנים", "אורגני ובריאות", "חטיפים ומתוקים",
+  "בשר עוף ודגים",
+  "חלב ביצים וסלטים",
+  "לחם ומאפים טריים", "קפוא ומצונן", "משקאות ואלכוהול",
+  "נייר וחד פעמי", "אחזקת הבית ובע\"ח", "פארם ותינוקות", "חגים ומיוחדים", "שונות",
+];
+function loadOrder() {
+  try { const o = JSON.parse(localStorage.getItem("dept-order") || "null"); if (Array.isArray(o)) return o; } catch {}
+  return DEFAULT_ORDER.slice();
+}
+let deptOrder = loadOrder();
+function saveOrder() { try { localStorage.setItem("dept-order", JSON.stringify(deptOrder)); } catch {} }
+function fullOrder() {
+  const known = new Set(deptOrder), extra = [];
+  catalog.products.forEach(p => { if (p.d && !known.has(p.d)) { known.add(p.d); extra.push(p.d); } });
+  if (!extra.length) return deptOrder;
+  const o = deptOrder.slice(), i = o.indexOf("שונות");
+  o.splice(i < 0 ? o.length : i, 0, ...extra);
+  return o;
+}
+function rank(d) { const o = fullOrder(), i = o.indexOf(d); return i < 0 ? o.length : i; }
+
+let closed = new Set((() => { try { return JSON.parse(localStorage.getItem("closed-groups") || "[]"); } catch { return []; } })());
+function saveClosed() { try { localStorage.setItem("closed-groups", JSON.stringify([...closed])); } catch {} }
+
+function renderOrderPanel() {
+  const panel = $("orderPanel"); panel.textContent = "";
+  const o = fullOrder();
+  panel.innerHTML = "<h3>סדר המחלקות ברשימה</h3><p>לפי הסדר שבו עוברים בסניף. הרשימה תסודר לפי הסדר הזה.</p>";
+  const ul = document.createElement("ul"); ul.className = "olist";
+  o.forEach((d, i) => {
+    const li = document.createElement("li");
+    li.innerHTML = `<span class="num">${i + 1}</span><span class="lbl"></span><button type="button" aria-label="העלה">↑</button><button type="button" aria-label="הורד">↓</button>`;
+    li.querySelector(".lbl").textContent = d;
+    const [up, down] = li.querySelectorAll("button");
+    up.disabled = i === 0; down.disabled = i === o.length - 1;
+    const move = dir => { const a = fullOrder().slice(); [a[i], a[i + dir]] = [a[i + dir], a[i]]; deptOrder = a; saveOrder(); renderOrderPanel(); renderAll(); };
+    up.onclick = () => move(-1); down.onclick = () => move(1);
+    ul.append(li);
+  });
+  const row = document.createElement("div"); row.className = "row2";
+  const reset = document.createElement("button"); reset.type = "button"; reset.className = "btn ghost"; reset.textContent = "חזרה לסדר המקורי";
+  reset.onclick = () => { deptOrder = DEFAULT_ORDER.slice(); saveOrder(); renderOrderPanel(); renderAll(); toast("הסדר חזר לברירת המחדל"); };
+  const ok = document.createElement("button"); ok.type = "button"; ok.className = "btn"; ok.textContent = "סיום";
+  ok.onclick = () => { panel.hidden = true; };
+  row.append(reset, ok);
+  panel.append(ul, row);
+}
+$("orderBtn").onclick = () => { const p = $("orderPanel"); p.hidden = !p.hidden; if (!p.hidden) renderOrderPanel(); };
+
 function deptOf(it) {
   const p = product(it);
   if (p && p.d) return p.d;
@@ -390,13 +463,22 @@ function renderList() {
   }
 
   const groups = new Map();
-  for (const it of open.sort((a, b) => a.createdAt - b.createdAt)) {
+  for (const it of open) {
     const d = deptOf(it); if (!groups.has(d)) groups.set(d, []); groups.get(d).push(it);
   }
-  for (const [d, its] of groups) {
-    const s = document.createElement("section"); s.className = "group";
-    const h = document.createElement("h2"); h.innerHTML = "<span></span><span class='n'></span>";
-    h.children[0].textContent = d; h.children[1].textContent = its.length;
+  const coll = new Intl.Collator("he");
+  const ordered = [...groups.entries()].sort((a, b) => rank(a[0]) - rank(b[0]));
+  for (const [d, its] of ordered) {
+    its.sort((a, b) => coll.compare(a.name, b.name));
+    const sub = its.reduce((s, i) => s + lineCost(product(i), i.qty), 0);
+    const s = document.createElement("section"); s.className = "group" + (closed.has(d) ? " closed" : "");
+    const h = document.createElement("h2"); h.className = "tog";
+    h.innerHTML = "<span><span class='chev'>▾</span><span class='t'></span></span><span class='n'></span>";
+    h.querySelector(".t").textContent = d;
+    h.querySelector(".n").textContent = `${its.length} פריטים` + (sub ? ` · ${fmt(sub)}` : "");
+    h.setAttribute("role", "button"); h.tabIndex = 0;
+    const flip = () => { closed.has(d) ? closed.delete(d) : closed.add(d); saveClosed(); s.classList.toggle("closed"); };
+    h.onclick = flip; h.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); flip(); } };
     const ul = document.createElement("ul"); ul.className = "items"; its.forEach(i => ul.append(row(i)));
     s.append(h, ul); list.append(s);
   }
@@ -470,7 +552,7 @@ function renderDepts() {
     box.append(b);
   };
   mk("הכול", "");
-  [...counts.entries()].sort((a, b) => b[1] - a[1]).forEach(([d]) => mk(d, d));
+  [...counts.keys()].sort((a, b) => rank(a) - rank(b)).forEach(d => mk(d, d));
 }
 function renderCatalog() {
   const res = search($("catInput").value, deptFilter);

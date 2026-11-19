@@ -189,19 +189,30 @@ def main():
         print("המחירון של הסניף לא זמין, נשארים מחירי האתר:", e)
         prices, promos = {}, {}
 
-    products = []
+    def branch_code(b):
+        """פירות וירקות מופיעים באתר בקוד קצר (100 = עגבניה) ובמחירון כ-7290000000100."""
+        if b in prices:
+            return b
+        if b.isdigit() and len(b) < 13:
+            for c in ("729" + b.zfill(10), b.zfill(13)):
+                if c in prices:
+                    return c
+        return None
+
+    products, known = [], set()
     for code, p in online.items():
-        bp = prices.get(p["b"])
-        if bp:
-            p["p"] = bp["p"]
+        bc = branch_code(p["b"])
+        if bc:
+            p["p"] = prices[bc]["p"]
+            known.add(bc)
         elif prices:
             p["o"] = 1          # לא במחירון הסניף: מחיר האתר
-        pr = promos.get(p["b"])
+        pr = promos.get(bc or p["b"])
         if pr and pr["x"] / pr["q"] < p["p"] - 0.005:   # רק מבצע שבאמת זול יותר
             p["pr"] = pr
         products.append(p)
     # מוצרים שנמכרים בסניף ואין להם דף באתר (בלי תמונה)
-    known = {p["b"] for p in products}
+    known |= {p["b"] for p in products}
     for code, bp in prices.items():
         if code in known or not bp["n"] or bp["p"] <= 0:
             continue
