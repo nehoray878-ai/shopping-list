@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>רשימת הקניות</title>
+<meta name="theme-color" content="#2f6b4f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="קניות">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700&family=Assistant:wght@400;600;700&display=swap">
+<style>
+:root {
+  --bg: #f4f7f2; --surface: #ffffff; --fg: #1d2a22; --muted: #66756b; --line: #dfe6dc;
+  --accent: #2f6b4f; --accent-soft: #e2efe6; --on-accent: #ffffff; --danger: #c2412d; --price: #1d2a22;
+  --font-display: "Rubik", "Arial Hebrew", system-ui, sans-serif;
+  --font-body: "Assistant", "Arial Hebrew", system-ui, sans-serif;
+  --tabbar: 64px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #131a16; --surface: #1b241f; --fg: #e6eee8; --muted: #93a398; --line: #2b3830;
+    --accent: #6fbf94; --accent-soft: #23362b; --on-accent: #0f1a14; --danger: #ef7a66; --price: #e6eee8;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; }
+body {
+  background: var(--bg); color: var(--fg);
+  font-family: var(--font-body); font-size: 17px; line-height: 1.45;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: calc(var(--tabbar) + env(safe-area-inset-bottom, 0px));
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--bg); }
+button { font: inherit; cursor: pointer; color: inherit; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+img { max-width: 100%; }
+[hidden] { display: none !important; }
+
+.wrap {
+  max-width: 640px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 16px 24px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+header h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.6rem; margin: 0; letter-spacing: -0.01em; }
+header .sub { color: var(--muted); font-size: 0.9rem; }
+
+/* summary */
+.summary {
+  background: var(--accent); color: var(--on-accent); border-radius: 18px; padding: 14px 16px;
+  display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: end;
+}
+.summary .lbl { font-size: 0.85rem; opacity: .85; }
+.summary .total { font-family: var(--font-display); font-weight: 700; font-size: 1.7rem; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.summary .count { text-align: left; font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+.summary .bar { grid-column: 1 / -1; height: 6px; border-radius: 99px; background: color-mix(in srgb, var(--on-accent) 25%, transparent); overflow: hidden; margin-top: 6px; }
+.summary .bar i { display: block; height: 100%; width: 0; background: var(--on-accent); border-radius: inherit; transition: width .3s; }
+
+/* add bar */
+.addbar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; background: var(--bg); padding-block: 6px; }
+.search {
+  display: flex; align-items: center; gap: 8px; background: var(--surface);
+  border: 1.5px solid var(--line); border-radius: 14px; padding-inline: 12px;
+}
+.search:focus-within { border-color: var(--accent); }
+.search svg { width: 20px; height: 20px; flex: none; color: var(--muted); }
+.search input { flex: 1; min-width: 0; border: 0; background: transparent; color: var(--fg); font: inherit; font-size: 1.05rem; padding: 13px 0; outline: none; }
+.search .clear { border: 0; background: transparent; color: var(--muted); padding: 6px; font-size: 1.1rem; }
+.suggest {
+  position: absolute; inset-inline: 0; top: calc(100% - 2px); background: var(--surface);
+  border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+  box-shadow: 0 10px 30px rgb(0 0 0 / .12); max-height: 60vh; overflow-y: auto;
+}
+.sg { display: flex; align-items: center; gap: 12px; width: 100%; border: 0; background: transparent; text-align: start; padding: 8px 12px; border-top: 1px solid var(--line); }
+.sg:first-child { border-top: 0; }
+.sg:hover, .sg.on { background: var(--accent-soft); }
+.sg .nm { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.sg .pr { font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sg.free .nm { color: var(--accent); font-weight: 600; }
+.thumb { flex: none; width: 44px; height: 44px; border-radius: 10px; background: #fff; object-fit: contain; border: 1px solid var(--line); }
+.thumb.ph { display: grid; place-items: center; color: var(--muted); font-size: 1.2rem; background: var(--accent-soft); }
+
+/* list */
+section.group { display: flex; flex-direction: column; gap: 6px; }
+.group h2 { margin: 0; font-family: var(--font-display); font-weight: 500; font-size: 0.85rem; color: var(--muted); letter-spacing: 0.03em; display: flex; justify-content: space-between; gap: 8px; }
+.group h2 .n { font-variant-numeric: tabular-nums; }
+ul.items { list-style: none; margin: 0; padding: 0; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; overflow: hidden; }
+.it { display: flex; align-items: center; gap: 10px; padding: 8px 10px 8px 6px; border-top: 1px solid var(--line); }
+.it:first-child { border-top: 0; }
+.chk { flex: none; width: 44px; height: 44px; border: 0; background: transparent; display: grid; place-items: center; padding: 0; }
+.chk span { width: 26px; height: 26px; border-radius: 8px; border: 2px solid var(--line); display: grid; place-items: center; transition: background .15s, border-color .15s; }
+.chk svg { width: 15px; height: 15px; opacity: 0; }
+.it .body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; border: 0; background: transparent; text-align: start; padding: 0; }
+.it .nm { overflow-wrap: anywhere; font-size: 1rem; line-height: 1.3; }
+.it .meta { color: var(--muted); font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+.it.done .chk span { background: var(--accent); border-color: var(--accent); }
+.it.done .chk svg { opacity: 1; }
+.it.done .nm { text-decoration: line-through; color: var(--muted); }
+.it.done .thumb { opacity: .5; }
+.stepper { flex: none; display: flex; align-items: center; background: var(--accent-soft); border-radius: 12px; }
+.stepper button { width: 36px; height: 36px; border: 0; background: transparent; font-size: 1.25rem; font-weight: 700; color: var(--accent); line-height: 1; }
+.stepper .q { min-width: 26px; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; font-size: 0.95rem; }
+.cart-head { display: flex; align-items: center; justify-content: space-between; }
+.linkbtn { border: 0; background: transparent; color: var(--danger); font-size: 0.92rem; font-weight: 600; padding: 4px 8px; border-radius: 8px; }
+.linkbtn.confirm { background: var(--danger); color: var(--surface); }
+.empty { text-align: center; color: var(--muted); padding: 32px 16px; border: 1.5px dashed var(--line); border-radius: 16px; display: flex; flex-direction: column; gap: 6px; align-items: center; }
+.empty strong { color: var(--fg); font-family: var(--font-display); font-weight: 500; font-size: 1.1rem; }
+.btn { border: 0; border-radius: 12px; background: var(--accent); color: var(--on-accent); font-family: var(--font-display); font-weight: 500; padding: 10px 18px; }
+
+/* catalog */
+.depts { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-block: 8px 2px; }
+.depts::-webkit-scrollbar { display: none; }
+.dchip { flex: none; border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 6px 14px; font-size: 0.92rem; }
+.dchip.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 10px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.card .img { aspect-ratio: 1; width: 100%; border-radius: 10px; background: #fff; display: grid; place-items: center; overflow: hidden; }
+.card .img img { width: 100%; height: 100%; object-fit: contain; }
+.card .nm { font-size: 0.92rem; line-height: 1.3; flex: 1; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.card .row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.card .pr { font-family: var(--font-display); font-weight: 700; font-variant-numeric: tabular-nums; font-size: 1.05rem; }
+.card .pr small { font-family: var(--font-body); font-weight: 400; color: var(--muted); font-size: 0.75rem; }
+.card .add { width: 38px; height: 38px; border-radius: 12px; border: 0; background: var(--accent); color: var(--on-accent); font-size: 1.4rem; line-height: 1; }
+.card.inlist { border-color: var(--accent); }
+.more { align-self: center; }
+.resinfo { color: var(--muted); font-size: 0.9rem; }
+
+/* tabbar */
+.tabbar {
+  position: fixed; inset: auto 0 0; z-index: 20; background: var(--surface); border-top: 1px solid var(--line);
+  display: flex; justify-content: center; gap: 8px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.tab { flex: 1; max-width: 220px; height: var(--tabbar); border: 0; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; color: var(--muted); font-size: 0.85rem; font-weight: 600; position: relative; }
+.tab svg { width: 24px; height: 24px; }
+.tab.on { color: var(--accent); }
+.tab .badge { position: absolute; top: 8px; inset-inline-start: calc(50% + 6px); background: var(--danger); color: #fff; border-radius: 99px; font-size: 0.7rem; min-width: 18px; height: 18px; padding: 0 5px; display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+
+.install { background: var(--accent-soft); border-radius: 14px; padding: 12px 14px; display: flex; gap: 10px; align-items: center; font-size: 0.92rem; }
+.install p { margin: 0; flex: 1; min-width: 0; }
+.install .x { border: 0; background: transparent; color: var(--muted); font-size: 1.1rem; padding: 4px 8px; }
+.note { color: var(--muted); font-size: 0.8rem; text-align: center; margin: 0; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(var(--tabbar) + 14px + env(safe-area-inset-bottom, 0px)); background: var(--fg); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 0.95rem; display: flex; gap: 14px; align-items: center; z-index: 40; max-width: calc(100% - 32px); }
+.toast button { border: 0; background: transparent; color: var(--accent); font-weight: 700; filter: brightness(1.4); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1 id="title">רשימת הקניות</h1>
+    <div class="sub" id="sub">רמי לוי · טוען מחירים…</div>
+  </header>
+
+  <div class="install" id="install" hidden>
+    <p id="installText"></p>
+    <button class="btn" id="installBtn" type="button" hidden>התקנה</button>
+    <button class="x" id="installX" type="button" aria-label="סגור">✕</button>
+  </div>
+
+  <!-- LIST VIEW -->
+  <div id="viewList">
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="summary">
+        <div><div class="lbl">סכום משוער</div><div class="total" id="total">₪0.00</div></div>
+        <div class="count" id="count">0 פריטים</div>
+        <div class="bar"><i id="bar"></i></div>
+      </div>
+      <div class="addbar">
+        <div style="position:relative">
+          <form class="search" id="addForm" autocomplete="off">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            <input id="addInput" type="text" placeholder="הוסיפו מוצר, למשל: חלב 3%" aria-label="הוספת מוצר לרשימה" enterkeyhint="done">
+            <button class="clear" id="addClear" type="button" aria-label="נקה" hidden>✕</button>
+          </form>
+          <div class="suggest" id="suggest" hidden></div>
+        </div>
+      </div>
+      <main id="list"></main>
+    </div>
+  </div>
+
+  <!-- CATALOG VIEW -->
+  <div id="viewCatalog" hidden>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="addbar">
+        <form class="search" id="catForm" autocomplete="off">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+          <input id="catInput" type="search" placeholder="חיפוש במוצרי רמי לוי" aria-label="חיפוש מוצר" enterkeyhint="search">
+        </form>
+        <div class="depts" id="depts"></div>
+      </div>
+      <div class="resinfo" id="resinfo"></div>
+      <div class="grid" id="grid"></div>
+      <button class="btn more" id="more" type="button" hidden>הצג עוד מוצרים</button>
+    </div>
+  </div>
+
+  <p class="note" id="note"></p>
+</div>
+
+<nav class="tabbar">
+  <button class="tab on" id="tabList" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/></svg>
+    הרשימה
+    <span class="badge" id="badge" hidden>0</span>
+  </button>
+  <button class="tab" id="tabCatalog" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 4h2l2.4 11h10.2L20 8H6.2"/><circle cx="9" cy="19" r="1.4"/><circle cx="17" cy="19" r="1.4"/></svg>
+    מוצרים ומחירים
+  </button>
+</nav>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const $ = id => document.getElementById(id);
+const LS_KEY = "shopping-list-v2";
+const fmt = n => "₪" + n.toFixed(2);
+
+let catalog = { products: [], imgBase: "", updated: "" };
+let byId = new Map();
+let items = load();
+let deptFilter = "";
+let catShown = 40;
+let confirmClear = false;
+
+function load() { try { return JSON.parse(localStorage.getItem(LS_KEY) || "[]"); } catch { return []; } }
+function save() { try { localStorage.setItem(LS_KEY, JSON.stringify(items)); } catch {} }
+function newId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+/* ---------- search ---------- */
+const norm = s => (s || "").toLowerCase().replace(/["'״׳`\-]/g, " ").replace(/\s+/g, " ").trim();
+function search(q, dept, limit) {
+  const toks = norm(q).split(" ").filter(Boolean);
+  const out = [];
+  for (const p of catalog.products) {
+    if (dept && p.d !== dept) continue;
+    if (toks.length && !toks.every(t => p._s.includes(t))) continue;
+    out.push(p);
+  }
+  if (toks.length) {
+    const first = toks[0];
+    // מוצרים שמתחילים במילת החיפוש קודם, ואחר כך הקצרים (בדרך כלל המוצר הבסיסי)
+    out.sort((a, b) => (b._s.startsWith(first) - a._s.startsWith(first)) || (a.n.length - b.n.length));
+  }
+  return limit ? out.slice(0, limit) : out;
+}
+
+/* ---------- list actions ---------- */
+function product(it) { return it.pid != null ? byId.get(it.pid) : null; }
+function inList(pid) { return items.find(i => i.pid === pid && !i.done); }
+
+function addProduct(p, qty = 1) {
+  const ex = inList(p.id);
+  if (ex) { ex.qty += qty; toast(`${p.n} – כמות ${ex.qty}`); }
+  else {
+    const old = items.find(i => i.pid === p.id && i.done);
+    if (old) { old.done = false; old.doneAt = null; old.qty = qty; old.createdAt = Date.now(); }
+    else items.push({ id: newId(), pid: p.id, name: p.n, qty, done: false, createdAt: Date.now(), doneAt: null });
+    toast(`נוסף: ${p.n}`);
+  }
+  save(); renderAll();
+}
+function addFree(name) {
+  name = name.trim(); if (!name) return;
+  if (items.some(i => !i.done && i.pid == null && i.name === name)) { toast(`"${name}" כבר ברשימה`); return; }
+  items.push({ id: newId(), pid: null, name, qty: 1, done: false, createdAt: Date.now(), doneAt: null });
+  save(); renderAll();
+}
+function setQty(id, q) {
+  const it = items.find(i => i.id === id); if (!it) return;
+  if (q <= 0) return remove(id);
+  it.qty = q; save(); renderAll();
+}
+function toggle(id) {
+  const it = items.find(i => i.id === id); if (!it) return;
+  it.done = !it.done; it.doneAt = it.done ? Date.now() : null; save(); renderAll();
+}
+let undoItem = null;
+function remove(id) {
+  const idx = items.findIndex(i => i.id === id); if (idx < 0) return;
+  undoItem = items[idx]; items.splice(idx, 1); save(); renderAll();
+  toast(`"${undoItem.name}" נמחק`, "בטל", () => { if (undoItem) { items.push(undoItem); undoItem = null; save(); renderAll(); } });
+}
+
+/* ---------- render: list ---------- */
+const checkSvg = '<svg viewBox="0 0 16 16" fill="none" stroke="var(--on-accent)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 4.5"/></svg>';
+
+function thumb(p) {
+  if (p && p.i) {
+    const im = document.createElement("img");
+    im.className = "thumb"; im.loading = "lazy"; im.alt = ""; im.src = catalog.imgBase + p.i;
+    im.onerror = () => im.replaceWith(Object.assign(document.createElement("div"), { className: "thumb ph", textContent: "🛒" }));
+    return im;
+  }
+  return Object.assign(document.createElement("div"), { className: "thumb ph", textContent: "✎" });
+}
+function unitLabel(p) { return p && p.k ? "לק\"ג" : ""; }
+
+function row(it) {
+  const p = product(it);
+  const li = document.createElement("li"); li.className = "it" + (it.done ? " done" : "");
+  const chk = document.createElement("button"); chk.type = "button"; chk.className = "chk";
+  chk.setAttribute("aria-label", (it.done ? "החזר לרשימה: " : "סמן כנקנה: ") + it.name);
+  chk.innerHTML = `<span>${checkSvg}</span>`; chk.onclick = () => toggle(it.id);
+  const body = document.createElement("button"); body.type = "button"; body.className = "body"; body.onclick = () => toggle(it.id);
+  const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = it.name;
+  const meta = document.createElement("span"); meta.className = "meta";
+  meta.textContent = p ? (it.qty > 1 ? `${fmt(p.p)} × ${it.qty} = ${fmt(p.p * it.qty)}` : `${fmt(p.p)} ${unitLabel(p)}`) : "פריט חופשי · אין מחיר";
+  body.append(nm, meta);
+  const st = document.createElement("div"); st.className = "stepper";
+  st.innerHTML = `<button type="button" aria-label="הפחת">−</button><span class="q">${it.qty}</span><button type="button" aria-label="הוסף">+</button>`;
+  st.children[0].onclick = () => setQty(it.id, it.qty - 1);
+  st.children[2].onclick = () => setQty(it.id, it.qty + 1);
+  li.append(chk, thumb(p), body);
+  if (!it.done) li.append(st);
+  return li;
+}
+
+function deptOf(it) {
+  const p = product(it);
+  if (p && p.d) return p.d;
+  const m = catalog.products.length ? search(it.name, "", 1)[0] : null;
+  return m && m.d ? m.d : "שונות";
+}
+
+function renderList() {
+  const list = $("list"); list.textContent = "";
+  const open = items.filter(i => !i.done);
+  const done = items.filter(i => i.done).sort((a, b) => b.doneAt - a.doneAt);
+  const total = items.reduce((s, i) => { const p = product(i); return s + (p ? p.p * i.qty : 0); }, 0);
+  const left = open.reduce((s, i) => { const p = product(i); return s + (p ? p.p * i.qty : 0); }, 0);
+
+  $("total").textContent = fmt(total);
+  $("count").textContent = items.length ? `${done.length}/${items.length} בעגלה` + (done.length && left ? ` · נשאר ${fmt(left)}` : "") : "הרשימה ריקה";
+  $("bar").style.width = items.length ? (done.length / items.length * 100) + "%" : "0";
+  $("badge").textContent = open.length; $("badge").hidden = !open.length;
+
+  if (!open.length) {
+    const e = document.createElement("div"); e.className = "empty";
+    e.innerHTML = items.length
+      ? "<strong>הכול בעגלה!</strong><span>אפשר לנקות את העגלה ולהתחיל רשימה חדשה.</span>"
+      : "<strong>הרשימה ריקה</strong><span>כתבו שם של מוצר בשורה למעלה, או חפשו במאגר המוצרים.</span>";
+    if (!items.length) { const b = document.createElement("button"); b.className = "btn"; b.type = "button"; b.textContent = "לחיפוש במאגר המוצרים"; b.onclick = () => showView("catalog"); e.append(b); }
+    list.append(e);
+  }
+
+  const groups = new Map();
+  for (const it of open.sort((a, b) => a.createdAt - b.createdAt)) {
+    const d = deptOf(it); if (!groups.has(d)) groups.set(d, []); groups.get(d).push(it);
+  }
+  for (const [d, its] of groups) {
+    const s = document.createElement("section"); s.className = "group";
+    const h = document.createElement("h2"); h.innerHTML = "<span></span><span class='n'></span>";
+    h.children[0].textContent = d; h.children[1].textContent = its.length;
+    const ul = document.createElement("ul"); ul.className = "items"; its.forEach(i => ul.append(row(i)));
+    s.append(h, ul); list.append(s);
+  }
+
+  if (done.length) {
+    const s = document.createElement("section"); s.className = "group";
+    const head = document.createElement("div"); head.className = "cart-head";
+    const h = document.createElement("h2"); h.innerHTML = `<span>בעגלה (${done.length})</span>`;
+    const b = document.createElement("button"); b.type = "button"; b.className = "linkbtn" + (confirmClear ? " confirm" : "");
+    b.textContent = confirmClear ? "בטוח? לחצו שוב" : "נקה עגלה";
+    b.onclick = () => {
+      if (!confirmClear) { confirmClear = true; renderList(); setTimeout(() => { if (confirmClear) { confirmClear = false; renderList(); } }, 4000); return; }
+      confirmClear = false; const n = done.length; items = items.filter(i => !i.done); save(); renderAll(); toast(`${n} פריטים נוקו`);
+    };
+    head.append(h, b);
+    const ul = document.createElement("ul"); ul.className = "items"; done.forEach(i => ul.append(row(i)));
+    s.append(head, ul); list.append(s);
+  }
+}
+
+/* ---------- add bar with suggestions ---------- */
+let sgIndex = -1, sgItems = [];
+function renderSuggest() {
+  const q = $("addInput").value; const box = $("suggest");
+  $("addClear").hidden = !q;
+  if (!q.trim()) { box.hidden = true; return; }
+  sgItems = catalog.products.length ? search(q, "", 7) : [];
+  box.textContent = "";
+  sgItems.forEach((p, i) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "sg" + (i === sgIndex ? " on" : "");
+    const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = p.n;
+    const pr = document.createElement("span"); pr.className = "pr"; pr.textContent = fmt(p.p);
+    b.append(thumb(p), nm, pr);
+    b.onmousedown = e => e.preventDefault();
+    b.onclick = () => { addProduct(p); clearAdd(); };
+    box.append(b);
+  });
+  const f = document.createElement("button"); f.type = "button"; f.className = "sg free";
+  f.innerHTML = '<div class="thumb ph">✎</div><span class="nm"></span>';
+  f.querySelector(".nm").textContent = `הוסף "${q.trim()}" בלי לבחור מוצר`;
+  f.onmousedown = e => e.preventDefault();
+  f.onclick = () => { addFree(q); clearAdd(); };
+  box.append(f);
+  box.hidden = false;
+}
+function clearAdd() { $("addInput").value = ""; sgIndex = -1; renderSuggest(); $("addInput").focus(); }
+$("addInput").addEventListener("input", () => { sgIndex = -1; renderSuggest(); });
+$("addInput").addEventListener("blur", () => setTimeout(() => $("suggest").hidden = true, 150));
+$("addInput").addEventListener("focus", renderSuggest);
+$("addInput").addEventListener("keydown", e => {
+  if (e.key === "ArrowDown") { sgIndex = Math.min(sgIndex + 1, sgItems.length - 1); renderSuggest(); e.preventDefault(); }
+  if (e.key === "ArrowUp") { sgIndex = Math.max(sgIndex - 1, -1); renderSuggest(); e.preventDefault(); }
+});
+$("addClear").onclick = clearAdd;
+$("addForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const q = $("addInput").value; if (!q.trim()) return;
+  if (sgIndex >= 0 && sgItems[sgIndex]) addProduct(sgItems[sgIndex]); else addFree(q);
+  clearAdd();
+});
+
+/* ---------- render: catalog ---------- */
+function renderDepts() {
+  const counts = new Map();
+  catalog.products.forEach(p => p.d && counts.set(p.d, (counts.get(p.d) || 0) + 1));
+  const box = $("depts"); box.textContent = "";
+  const mk = (label, val) => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "dchip" + (deptFilter === val ? " on" : "");
+    b.textContent = label; b.onclick = () => { deptFilter = val; catShown = 40; renderDepts(); renderCatalog(); };
+    box.append(b);
+  };
+  mk("הכול", "");
+  [...counts.entries()].sort((a, b) => b[1] - a[1]).forEach(([d]) => mk(d, d));
+}
+function renderCatalog() {
+  const res = search($("catInput").value, deptFilter);
+  $("resinfo").textContent = catalog.products.length ? `${res.length.toLocaleString("he-IL")} מוצרים` : "טוען את מאגר המוצרים…";
+  const grid = $("grid"); grid.textContent = "";
+  res.slice(0, catShown).forEach(p => {
+    const c = document.createElement("div"); const it = inList(p.id);
+    c.className = "card" + (it ? " inlist" : "");
+    const im = document.createElement("div"); im.className = "img";
+    if (p.i) { const img = document.createElement("img"); img.loading = "lazy"; img.alt = ""; img.src = catalog.imgBase + p.i; img.onerror = () => img.remove(); im.append(img); }
+    const nm = document.createElement("div"); nm.className = "nm"; nm.textContent = p.n;
+    const r = document.createElement("div"); r.className = "row";
+    const pr = document.createElement("div"); pr.className = "pr"; pr.textContent = fmt(p.p);
+    if (p.k) { const s = document.createElement("small"); s.textContent = " לק\"ג"; pr.append(s); }
+    r.append(pr);
+    if (it) {
+      const st = document.createElement("div"); st.className = "stepper";
+      st.innerHTML = `<button type="button" aria-label="הפחת">−</button><span class="q">${it.qty}</span><button type="button" aria-label="הוסף">+</button>`;
+      st.children[0].onclick = () => setQty(it.id, it.qty - 1);
+      st.children[2].onclick = () => setQty(it.id, it.qty + 1);
+      r.append(st);
+    } else {
+      const b = document.createElement("button"); b.type = "button"; b.className = "add"; b.textContent = "+";
+      b.setAttribute("aria-label", "הוסף לרשימה: " + p.n); b.onclick = () => addProduct(p);
+      r.append(b);
+    }
+    c.append(im, nm, r); grid.append(c);
+  });
+  $("more").hidden = res.length <= catShown;
+}
+let catTimer;
+$("catInput").addEventListener("input", () => { clearTimeout(catTimer); catTimer = setTimeout(() => { catShown = 40; renderCatalog(); }, 150); });
+$("catForm").addEventListener("submit", e => { e.preventDefault(); $("catInput").blur(); });
+$("more").onclick = () => { catShown += 40; renderCatalog(); };
+
+/* ---------- views ---------- */
+let view = "list";
+function showView(v) {
+  view = v;
+  $("viewList").hidden = v !== "list"; $("viewCatalog").hidden = v !== "catalog";
+  $("tabList").classList.toggle("on", v === "list"); $("tabCatalog").classList.toggle("on", v === "catalog");
+  if (v === "catalog") renderCatalog();
+  window.scrollTo(0, 0);
+}
+$("tabList").onclick = () => showView("list");
+$("tabCatalog").onclick = () => showView("catalog");
+function renderAll() { renderList(); if (view === "catalog") renderCatalog(); }
+
+/* ---------- toast ---------- */
+let tt;
+function toast(msg, label, fn) {
+  const t = $("toast"); t.textContent = "";
+  t.append(Object.assign(document.createElement("span"), { textContent: msg }));
+  if (label) { const b = document.createElement("button"); b.type = "button"; b.textContent = label; b.onclick = () => { fn(); t.hidden = true; }; t.append(b); }
+  t.hidden = false; clearTimeout(tt); tt = setTimeout(() => t.hidden = true, 3500);
+}
+
+/* ---------- install to home screen ---------- */
+const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+let deferred = null;
+function dismissed() { try { return localStorage.getItem("install-dismissed") === "1"; } catch { return false; } }
+if (!standalone && !dismissed()) {
+  const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (ios) { $("installText").textContent = "להוספה למסך הבית: לחצו על כפתור השיתוף ⬆︎ בספארי ואז על \"הוסף למסך הבית\"."; $("install").hidden = false; }
+}
+addEventListener("beforeinstallprompt", e => {
+  e.preventDefault(); deferred = e;
+  if (standalone || dismissed()) return;
+  $("installText").textContent = "אפשר להתקין את הרשימה כאפליקציה במסך הבית.";
+  $("installBtn").hidden = false; $("install").hidden = false;
+});
+$("installBtn").onclick = async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; $("install").hidden = true; };
+$("installX").onclick = () => { $("install").hidden = true; try { localStorage.setItem("install-dismissed", "1"); } catch {} };
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+
+/* ---------- boot ---------- */
+renderList();
+fetch("catalog.json").then(r => r.json()).then(d => {
+  d.products.forEach(p => p._s = norm(p.n + " " + p.b));
+  catalog = d; byId = new Map(d.products.map(p => [p.id, p]));
+  $("sub").textContent = `רמי לוי · מחירים מעודכנים ל-${d.updated}`;
+  $("note").textContent = `${d.products.length.toLocaleString("he-IL")} מוצרים במאגר · המחירים מאתר רמי לוי אונליין ועשויים להיות שונים מעט מהמחיר בסניף`;
+  renderDepts(); renderAll();
+}).catch(() => {
+  $("sub").textContent = "רמי לוי · אין חיבור למאגר המוצרים כרגע";
+});
+</script>
+</body>
+</html>
