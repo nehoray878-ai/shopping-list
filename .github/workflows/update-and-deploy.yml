@@ -1,9 +1,7 @@
-# מעדכן כל בוקר את מחירי רמי לוי ומפרסם את האפליקציה ב-GitHub Pages
+# מפרסם את האפליקציה ב-GitHub Pages. המחירים מתעדכנים מהמחשב הביתי (רמי לוי חוסם את שרתי GitHub)
 name: עדכון מחירים ופרסום
 
 on:
-  schedule:
-    - cron: "0 4 * * *"   # כל יום ב-07:00 שעון ישראל (בערך)
   workflow_dispatch:
   push:
     branches: [main]
@@ -26,9 +24,9 @@ jobs:
         with:
           python-version: "3.12"
       # רמי לוי חוסם לפעמים את שרתי GitHub. אם ההורדה נכשלת, מפרסמים עם הקטלוג הקיים
-      - name: הורדת מחירים מרמי לוי
+      - name: הורדת מחירים מרמי לוי (רק בהרצה ידנית)
         id: prices
-        if: github.event_name != 'push'
+        if: github.event_name == 'workflow_dispatch' && false
         continue-on-error: true
         run: python3 scripts/update_catalog.py
       - name: שמירת הקטלוג המעודכן

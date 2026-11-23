@@ -192,23 +192,30 @@ def _stream(data):
 def main():
     online = fetch_online()
     branch_info = None
-    try:
-        portal = Portal()
-        portal.login()
-        price_file = portal.latest(f"PriceFull{CHAIN}-")
-        promo_file = portal.latest(f"PromoFull{CHAIN}-")
-        print("מחירון:", price_file, "|", promo_file)
-        prices = parse_prices(portal.download_xml(price_file))
-        promos = parse_promos(portal.download_xml(promo_file), datetime.date.today().isoformat())
-        stamp = re.search(r"-(\d{8})-(\d{4})", price_file)
-        branch_info = {
-            "name": BRANCH_NAME, "id": BRANCH_ID,
-            "at": f"{stamp.group(1)[6:8]}/{stamp.group(1)[4:6]} {stamp.group(2)[:2]}:{stamp.group(2)[2:]}" if stamp else "",
-        }
-        print(f"סניף: {len(prices)} מחירים, {len(promos)} מוצרים במבצע")
-    except Exception as e:
-        print("המחירון של הסניף לא זמין, נשארים מחירי האתר:", e)
-        prices, promos = {}, {}
+    for attempt in range(3):
+        try:
+            portal = Portal()
+            portal.login()
+            price_file = portal.latest(f"PriceFull{CHAIN}-")
+            promo_file = portal.latest(f"PromoFull{CHAIN}-")
+            print("מחירון:", price_file, "|", promo_file)
+            prices = parse_prices(portal.download_xml(price_file))
+            promos = parse_promos(portal.download_xml(promo_file), datetime.date.today().isoformat())
+            if len(prices) < 1000:
+                raise RuntimeError(f"מחירון חלקי ({len(prices)} מוצרים)")
+            stamp = re.search(r"-(\d{8})-(\d{4})", price_file)
+            branch_info = {
+                "name": BRANCH_NAME, "id": BRANCH_ID,
+                "at": f"{stamp.group(1)[6:8]}/{stamp.group(1)[4:6]} {stamp.group(2)[:2]}:{stamp.group(2)[2:]}" if stamp else "",
+            }
+            print(f"סניף: {len(prices)} מחירים, {len(promos)} מוצרים במבצע")
+            break
+        except Exception as e:
+            print(f"ניסיון {attempt + 1}: המחירון של הסניף לא זמין:", e)
+            time.sleep(20)
+    else:
+        # לא דורסים קטלוג טוב במחירי אתר: עדיף להשאיר את מחירי הסניף האחרונים
+        raise SystemExit("המחירון של הסניף לא זמין. הקטלוג הקיים נשאר בלי שינוי.")
 
     def promo_ok(pr, price):
         unit = pr["x"] / pr["q"]
