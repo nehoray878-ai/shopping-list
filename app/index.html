@@ -177,6 +177,20 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
 .fchip::after { content: "+"; color: var(--accent); font-weight: 700; }
 .vh { font-family: var(--font-display); font-weight: 700; font-size: 1.25rem; margin: 0; }
 .vsub { color: var(--muted); font-size: 0.9rem; margin: 0; }
+.budline { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 14px; padding: 10px 14px; font: inherit; font-size: 0.92rem; text-align: start; }
+.budline b { font-variant-numeric: tabular-nums; }
+.budline .over, .budget .over { color: var(--danger); }
+.budget { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 8px; }
+.budget .top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.budget .top strong { font-family: var(--font-display); font-size: 1.05rem; }
+.budget .big { font-family: var(--font-display); font-weight: 700; font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+.budget .meter { height: 10px; border-radius: 99px; background: var(--accent-soft); overflow: hidden; }
+.budget .meter i { display: block; height: 100%; background: var(--accent); border-radius: inherit; }
+.budget .meter i.over { background: var(--danger); }
+.budget .meter i.warn { background: var(--promo); }
+.budget .sub { color: var(--muted); font-size: 0.85rem; }
+.budget form { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.budget input { font: inherit; font-size: 1.05rem; width: 8em; padding: 8px 12px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--fg); }
 .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .stat .l { color: var(--muted); font-size: 0.78rem; }
@@ -278,6 +292,7 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
         <div class="count" id="count">0 פריטים</div>
         <div class="bar"><i id="bar"></i></div>
       </div>
+      <button class="budline" id="budLine" type="button" hidden></button>
       <div class="tools"><button class="toolbtn" id="shareBtn" type="button" hidden>רשימה משותפת</button><span style="display:flex;gap:2px;flex-wrap:wrap"><button class="toolbtn" id="waBtn" type="button">שליחה בוואטסאפ</button><button class="toolbtn" id="bigBtn" type="button" aria-pressed="false">Aa טקסט גדול</button><button class="toolbtn" id="orderBtn" type="button">⇅ סדר המחלקות</button></span></div>
       <div class="panel" id="sharePanel" hidden></div>
       <div class="panel" id="orderPanel" hidden></div>
@@ -643,6 +658,7 @@ function renderList() {
   $("total").textContent = fmt(total);
   $("count").textContent = all.length ? `${done.length}/${all.length} בעגלה` + (done.length && left ? ` · נשאר ${fmt(left)}` : "") : "הרשימה ריקה";
   $("bar").style.width = all.length ? (done.length / all.length * 100) + "%" : "0";
+  renderBudLine(total);
   $("badge").textContent = open.length; $("badge").hidden = !open.length;
 
   if (!open.length) {
@@ -898,13 +914,80 @@ function saveTrip(done) {
 const monthKey = t => { const d = new Date(t); return d.getFullYear() * 12 + d.getMonth(); };
 const tripTotal = t => t.paid != null ? t.paid : t.total;
 const openTrips = new Set(); let editTrip = null;
+
+/* ---------- monthly budget ---------- */
+let budget = +loadJSON("budget", 0) || 0;
+let budEdit = false;
+function spentThisMonth() {
+  const now = monthKey(Date.now());
+  return history.filter(t => monthKey(t.t) === now).reduce((s, t) => s + tripTotal(t), 0);
+}
+const fmt0 = n => Math.round(n).toLocaleString("he-IL") + " ₪";
+function renderBudLine(listLeft) {
+  const el = $("budLine");
+  if (!budget) { el.hidden = true; return; }
+  const left = Math.round(budget - spentThisMonth());
+  const after = left - Math.round(listLeft);
+  el.hidden = false; el.textContent = "";
+  const a = document.createElement("span");
+  a.append("תקציב החודש: ");
+  const b = document.createElement("b"); b.textContent = left >= 0 ? `נשארו ${fmt0(left)}` : `חריגה של ${fmt0(-left)}`;
+  if (left < 0) b.className = "over";
+  a.append(b);
+  el.append(a);
+  if (listLeft > 0 && left >= 0) {
+    const c = document.createElement("span");
+    c.textContent = after >= 0 ? `אחרי הרשימה הזו: ${fmt0(after)}` : `הרשימה הזו חורגת ב-${fmt0(-after)}`;
+    if (after < 0) c.className = "over";
+    el.append(c);
+  }
+}
+$("budLine").onclick = () => showView("history");
+function budgetCard() {
+  const box = document.createElement("div"); box.className = "budget";
+  if (!budget || budEdit) {
+    box.innerHTML = `<div class="top"><strong>💰 תקציב חודשי</strong></div><div class="sub">כמה מתכננים להוציא בסופר בחודש? הסכום יופיע גם ברשימה, עם כמה נשאר.</div>`;
+    const form = document.createElement("form");
+    const inp = document.createElement("input"); inp.type = "number"; inp.inputMode = "numeric"; inp.min = "0"; inp.step = "50"; inp.placeholder = "למשל 3000"; inp.setAttribute("aria-label", "תקציב חודשי בשקלים");
+    if (budget) inp.value = budget;
+    const ok = document.createElement("button"); ok.className = "btn"; ok.type = "submit"; ok.textContent = "שמירה";
+    form.append(inp, " ₪", ok);
+    if (budget) {
+      const del = document.createElement("button"); del.type = "button"; del.className = "linkbtn"; del.textContent = "ביטול התקציב";
+      del.onclick = () => { budget = 0; budEdit = false; saveJSON("budget", 0); toast("התקציב בוטל"); renderAll(); };
+      form.append(del);
+    }
+    form.onsubmit = e => {
+      e.preventDefault();
+      const v = Math.round(+inp.value);
+      if (!(v > 0)) { inp.focus(); return; }
+      budget = v; budEdit = false; saveJSON("budget", v); toast(`נקבע תקציב: ${fmt0(v)} לחודש`); renderAll();
+    };
+    box.append(form);
+    return box;
+  }
+  const spent = spentThisMonth(), left = Math.round(budget - spent), pct = spent / budget * 100;
+  const d = new Date(), daysLeft = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate() - d.getDate() + 1;
+  box.innerHTML = `<div class="top"><strong>💰 תקציב החודש</strong><span class="big"></span></div><div class="meter"><i></i></div><div class="sub"></div>`;
+  const big = box.querySelector(".big");
+  big.textContent = left >= 0 ? `נשארו ${fmt0(left)}` : `חריגה של ${fmt0(-left)}`;
+  if (left < 0) big.classList.add("over");
+  const bar = box.querySelector(".meter i");
+  bar.style.width = Math.min(100, pct) + "%";
+  if (pct > 100) bar.className = "over"; else if (pct >= 85) bar.className = "warn";
+  box.querySelector(".sub").textContent = `הוצאתם ${fmt0(spent)} מתוך ${fmt0(budget)} (${Math.round(pct)}%) · עוד ${daysLeft} ימים לסוף החודש`;
+  const ed = document.createElement("button"); ed.type = "button"; ed.className = "toolbtn"; ed.textContent = "שינוי התקציב"; ed.style.alignSelf = "flex-start";
+  ed.onclick = () => { budEdit = true; renderHistory(); };
+  box.append(ed);
+  return box;
+}
 function renderHistory() {
   const box = $("history"); box.textContent = "";
   box.append(Object.assign(document.createElement("h2"), { className: "vh", textContent: "היסטוריית קניות" }));
   if (!history.length) {
     const e = document.createElement("div"); e.className = "empty";
     e.innerHTML = "<strong>עוד אין קניות שמורות</strong><span>בסוף קנייה לוחצים על \"סיימתי קנייה\" ברשימה, והקנייה נשמרת כאן עם הסכום.</span>";
-    box.append(e, backupPanel()); return;
+    box.append(budgetCard(), e, backupPanel()); return;
   }
   history.sort((a, b) => b.t - a.t);
   const now = monthKey(Date.now());
@@ -916,7 +999,7 @@ function renderHistory() {
     d.innerHTML = `<span class="l"></span><span class="v"></span>`; d.children[0].textContent = l; d.children[1].textContent = fmt(v);
     stats.append(d);
   });
-  box.append(stats, Object.assign(document.createElement("p"), { className: "vsub", textContent: "הסכומים משוערים לפי מחירי הסניף ביום הקנייה, אלא אם הזנתם סכום ששולם בפועל. לחיצה על קנייה פותחת אותה לעריכה או מחיקה." }));
+  box.append(budgetCard(), stats, Object.assign(document.createElement("p"), { className: "vsub", textContent: "הסכומים משוערים לפי מחירי הסניף ביום הקנייה, אלא אם הזנתם סכום ששולם בפועל. לחיצה על קנייה פותחת אותה לעריכה או מחיקה." }));
   const dfmt = new Intl.DateTimeFormat("he-IL", { weekday: "long", day: "numeric", month: "numeric" });
   history.forEach(t => {
     const w = document.createElement("div"); w.className = "trip";
@@ -1014,7 +1097,7 @@ function tripEditor(t) {
 }
 
 /* ---------- backup & restore ---------- */
-const BACKUP_KEYS = ["shopping-list-v2", "lists", "cur-list", "favs", "history", "dept-order", "big-text", "closed-groups"];
+const BACKUP_KEYS = ["shopping-list-v2", "lists", "cur-list", "favs", "history", "dept-order", "big-text", "closed-groups", "budget", "cat-sort"];
 function backupPanel() {
   const panel = document.createElement("div"); panel.className = "panel";
   panel.innerHTML = "<h3>גיבוי ושחזור</h3><p>כל הנתונים (רשימות, קבועים והיסטוריה) שמורים רק בטלפון הזה. כדאי לשמור גיבוי מדי פעם: בקובץים, בדרייב או בהודעה לעצמכם בוואטסאפ.</p>";
