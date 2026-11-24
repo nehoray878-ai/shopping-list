@@ -237,6 +237,9 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
 .it > .promo { margin-inline-start: 104px; margin-top: -6px; margin-bottom: 2px; }
 .card .was { text-decoration: line-through; color: var(--muted); font-size: 0.8rem; font-weight: 400; font-family: var(--font-body); }
 .onl { color: var(--muted); font-size: 0.75rem; }
+.chg { font-size: 0.78rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.chg.up { color: var(--danger); }
+.chg.down { color: var(--accent); }
 .resinfo { color: var(--muted); font-size: 0.9rem; }
 .sortrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .sortsel { display: flex; align-items: center; gap: 6px; color: var(--muted); font-size: 0.9rem; position: relative; }
@@ -329,6 +332,7 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
             <option value="asc">מהזול ליקר</option>
             <option value="desc">מהיקר לזול</option>
             <option value="unit">הכי משתלם (ל-100 גרם/מ"ל)</option>
+            <option value="chg">מחירים שהשתנו לאחרונה</option>
           </select>
         </label>
       </div>
@@ -553,6 +557,15 @@ function altRow(it, p) {
   return box;
 }
 
+/* מחיר שעלה או ירד בסניף בשבועיים האחרונים */
+function chgTag(p, short) {
+  if (!p || p.pp == null || p.pp === p.p) return null;
+  const up = p.p > p.pp;
+  const [, m, d] = (p.pc || "").split("-");
+  const el = document.createElement("span"); el.className = "chg " + (up ? "up" : "down");
+  el.textContent = `${up ? "▲ התייקר" : "▼ הוזל"} מ-${fmt(p.pp)}` + (d && !short ? ` (${+d}/${+m})` : "");
+  return el;
+}
 function row(it) {
   const p = product(it);
   const li = document.createElement("li"); li.className = "it" + (it.done ? " done" : "");
@@ -569,6 +582,7 @@ function row(it) {
     if (p.o) meta.textContent += " · מחיר אונליין";
   } else meta.textContent = "פריט חופשי · אין מחיר";
   body.append(nm, meta);
+  const chg = !it.done && chgTag(p, true); if (chg) body.append(chg);
   const tag = promoTag(p, it.qty);
   if (tag && !it.done) {
     if (!isKg(p) && it.qty < p.pr.q) tag.firstChild.textContent += ` (עוד ${p.pr.q - it.qty})`;
@@ -788,6 +802,7 @@ function cardFor(p) {
     r.append(b);
   }
   c.append(star, im, nm);
+  const chg = chgTag(p); if (chg) c.append(chg);
   if (tag) c.append(tag);
   if (p.o) c.append(Object.assign(document.createElement("span"), { className: "onl", textContent: "מחיר אונליין (לא במחירון הסניף)" }));
   c.append(r);
@@ -805,6 +820,8 @@ function unitCost(p) {
 let catSort = loadJSON("cat-sort", "");
 function sortRes(res) {
   if (!catSort) return res;
+  if (catSort === "chg")   // רק מוצרים שהמחיר שלהם השתנה: קודם מה שהוזל הכי הרבה
+    return res.filter(p => p.pp != null && p.pp !== p.p).sort((a, b) => (a.p / a.pp) - (b.p / b.pp));
   const key = catSort === "unit" ? unitCost : effPrice;
   const dir = catSort === "desc" ? -1 : 1;
   // יציב: מוצרים באותו מחיר נשארים בסדר ההתאמה לחיפוש

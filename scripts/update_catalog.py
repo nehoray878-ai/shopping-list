@@ -33,6 +33,7 @@ PAGE = 100
 MAX_PROMO_ITEMS = 100     # מבצעים כלליים על מאות מוצרים לא מוצגים
 SKIP_WORDS = ("קופון", "הטבת", "הטבה", "מצטרפים", "שובר", "מתנה")
 PROMO_TYPES = {"1", "3", "10"}  # סוגי מבצע עם מחיר ברור: "X ב-Y" או "ב-Y" (בלי קופונים ואחוזים)
+CHANGE_DAYS = 14          # כמה ימים מסמנים מוצר שהמחיר שלו עלה או ירד
 
 
 # ---------- 1. האתר: שמות, מחלקות ותמונות ----------
@@ -180,6 +181,27 @@ def parse_promos(xml, today):
     return best
 
 
+def track_changes(products, old_catalog, today):
+    """מסמן מוצר שהמחיר הקבוע שלו בסניף השתנה: pp = המחיר הקודם, pc = תאריך השינוי.
+    הסימון נשאר CHANGE_DAYS ימים. מבצעים לא נחשבים שינוי מחיר."""
+    if not old_catalog or not old_catalog.get("branch"):
+        return 0
+    old = {p["id"]: p for p in old_catalog.get("products", [])}
+    limit = (datetime.date.fromisoformat(today) - datetime.timedelta(days=CHANGE_DAYS)).isoformat()
+    changed = 0
+    for p in products:
+        p.pop("pp", None); p.pop("pc", None)
+        o = old.get(p["id"])
+        if not o or p.get("o") or o.get("o"):
+            continue
+        if abs(p["p"] - o["p"]) >= 0.01:
+            p["pp"], p["pc"] = o["p"], today
+            changed += 1
+        elif o.get("pp") is not None and o.get("pc", "") > limit:
+            p["pp"], p["pc"] = o["pp"], o["pc"]
+    return changed
+
+
 def _stream(data):
     import io
     if data[:3] == b"\xef\xbb\xbf":
@@ -259,6 +281,13 @@ def main():
         if pr and promo_ok(pr, p["p"]):
             p["pr"] = pr
         products.append(p)
+
+    try:
+        old_catalog = json.loads(OUT.read_text(encoding="utf-8"))
+    except Exception:
+        old_catalog = None
+    n = track_changes(products, old_catalog, datetime.date.today().isoformat())
+    print(f"שינויי מחיר מאז העדכון הקודם: {n}")
 
     out = {
         "store": ONLINE_STORE,
