@@ -164,6 +164,20 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
 .card { position: relative; }
 .star { position: absolute; top: 6px; inset-inline-end: 6px; width: 38px; height: 38px; border: 0; border-radius: 50%; background: color-mix(in srgb, var(--surface) 85%, transparent); color: var(--muted); font-size: 1.25rem; line-height: 1; z-index: 1; }
 .star.on { color: #e0a100; }
+.alerts { background: var(--promo-bg); border: 1px solid color-mix(in srgb, var(--promo) 30%, transparent); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.alerts .hd { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.alerts .hd strong { font-family: var(--font-display); font-weight: 600; font-size: 0.98rem; color: var(--promo); }
+.alerts .x { border: 0; background: transparent; color: var(--muted); font-size: 1.05rem; width: 34px; height: 34px; border-radius: 8px; flex: none; }
+.alerts .rows { display: flex; flex-direction: column; gap: 6px; }
+.arow { display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); background: var(--surface); border-radius: 12px; padding: 6px 10px 6px 6px; font: inherit; color: var(--fg); text-align: start; width: 100%; }
+.arow img, .arow .ph { width: 36px; height: 36px; border-radius: 8px; object-fit: contain; background: #fff; flex: none; }
+.arow .ph { display: grid; place-items: center; background: var(--accent-soft); }
+.arow .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.arow .tx b { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.arow .tx span { font-size: 0.82rem; font-weight: 600; color: var(--promo); }
+.arow .tx span.down { color: var(--accent); }
+.arow .plus { color: var(--accent); font-weight: 700; font-size: 1.3rem; flex: none; }
+.alerts .more { border: 0; background: transparent; color: var(--promo); font: inherit; font-weight: 600; font-size: 0.9rem; align-self: flex-start; padding: 4px 2px; }
 .favs { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
 .favs .hd { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .favs .hd strong { font-family: var(--font-display); font-weight: 500; font-size: 0.95rem; }
@@ -309,6 +323,7 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
           <div class="suggest" id="suggest" hidden></div>
         </div>
       </div>
+      <div class="alerts" id="alerts" hidden></div>
       <div class="favs" id="favs"></div>
       <main id="list"></main>
     </div>
@@ -378,6 +393,7 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
   <button class="tab" id="tabDeals" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12V4h8l10 10-8 8L3 12z"/><circle cx="7.5" cy="7.5" r="1.3"/></svg>
     מבצעים
+    <span class="badge" id="dealsBadge" hidden>0</span>
   </button>
   <button class="tab" id="tabHistory" type="button">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3 2"/></svg>
@@ -855,7 +871,7 @@ function showView(v) {
 }
 for (const [k, n] of Object.entries(VIEWS)) $("tab" + n).onclick = () => showView(k);
 function renderAll() {
-  renderList(); renderFavs();
+  renderList(); renderFavs(); renderAlerts();
   if (view === "catalog") renderCatalog();
   if (view === "deals") renderDeals();
   if (view === "history") renderHistory();
@@ -1114,7 +1130,7 @@ function tripEditor(t) {
 }
 
 /* ---------- backup & restore ---------- */
-const BACKUP_KEYS = ["shopping-list-v2", "lists", "cur-list", "favs", "history", "dept-order", "big-text", "closed-groups", "budget", "cat-sort"];
+const BACKUP_KEYS = ["shopping-list-v2", "lists", "cur-list", "favs", "history", "dept-order", "big-text", "closed-groups", "budget", "cat-sort", "seen-deals"];
 function backupPanel() {
   const panel = document.createElement("div"); panel.className = "panel";
   panel.innerHTML = "<h3>גיבוי ושחזור</h3><p>כל הנתונים (רשימות, קבועים והיסטוריה) שמורים רק בטלפון הזה. כדאי לשמור גיבוי מדי פעם: בקובץים, בדרייב או בהודעה לעצמכם בוואטסאפ.</p>";
@@ -1162,11 +1178,72 @@ async function exportBackup() {
 
 /* ---------- weekly deals ---------- */
 let dealsShown = 40;
+/* ---------- alerts: regular items on sale or cheaper ---------- */
+// "קבועים" = מסומנים בכוכב + מוצרים שנקנו לפחות פעמיים
+let seenDeals = new Set(loadJSON("seen-deals", []));
+const alertKey = a => a.p.id + ":" + (a.kind === "sale" ? "s" + a.p.pr.x + "/" + a.p.pr.q + "/" + a.p.pr.e : "d" + a.p.p);
+function regularAlerts(withListed) {
+  if (!catalog.products.length) return [];
+  const ids = new Set([...favs, ...frequent(2)]);
+  const out = [];
+  for (const id of ids) {
+    const p = byId.get(id); if (!p || (!withListed && inList(p.id))) continue;
+    if (p.pr) out.push({ p, kind: "sale", txt: "מבצע: " + promoShort(p.pr, p) + ` · עד ${p.pr.e}` });
+    else if (p.pp != null && p.p < p.pp) out.push({ p, kind: "down", txt: `הוזל: ${fmt(p.p)} במקום ${fmt(p.pp)}` });
+  }
+  return out;
+}
+function markSeen(list) {
+  list.forEach(a => seenDeals.add(alertKey(a)));
+  // שומרים רק מפתחות של מבצעים שעדיין קיימים
+  const live = new Set(regularAlerts(true).map(alertKey));
+  seenDeals = new Set([...seenDeals].filter(k => live.has(k) || list.some(a => alertKey(a) === k)));
+  saveJSON("seen-deals", [...seenDeals]);
+}
+let alertsOpen = false;
+function renderAlerts() {
+  const all = regularAlerts();
+  const fresh = all.filter(a => !seenDeals.has(alertKey(a)));
+  const badge = $("dealsBadge");
+  badge.textContent = fresh.length; badge.hidden = !fresh.length;
+  const box = $("alerts"); box.textContent = "";
+  if (!fresh.length) { box.hidden = true; return; }
+  box.hidden = false;
+  const hd = document.createElement("div"); hd.className = "hd";
+  const sales = fresh.filter(a => a.kind === "sale").length, downs = fresh.length - sales;
+  const title = document.createElement("strong");
+  title.textContent = "🔔 " + [sales ? `${sales} מהקבועים שלכם במבצע` : "", downs ? `${downs} הוזלו` : ""].filter(Boolean).join(" · ");
+  const x = document.createElement("button"); x.type = "button"; x.className = "x"; x.textContent = "✕"; x.setAttribute("aria-label", "הסתרת ההתראות עד המבצע הבא");
+  x.onclick = () => { markSeen(fresh); alertsOpen = false; renderAlerts(); toast("ההתראות הוסתרו. מבצע חדש יופיע שוב."); };
+  hd.append(title, x); box.append(hd);
+  const rows = document.createElement("div"); rows.className = "rows";
+  const shown = alertsOpen ? fresh : fresh.slice(0, 3);
+  for (const a of shown) {
+    const b = document.createElement("button"); b.type = "button"; b.className = "arow";
+    if (a.p.i) { const im = document.createElement("img"); im.src = catalog.imgBase + a.p.i; im.alt = ""; im.loading = "lazy"; b.append(im); }
+    else b.append(Object.assign(document.createElement("span"), { className: "ph", textContent: "🛒" }));
+    const tx = document.createElement("span"); tx.className = "tx";
+    tx.append(Object.assign(document.createElement("b"), { textContent: a.p.n }), Object.assign(document.createElement("span"), { className: a.kind === "down" ? "down" : "", textContent: a.txt }));
+    b.append(tx, Object.assign(document.createElement("span"), { className: "plus", textContent: "+" }));
+    b.setAttribute("aria-label", "הוספה לרשימה: " + a.p.n);
+    b.onclick = () => addProduct(a.p);
+    rows.append(b);
+  }
+  box.append(rows);
+  if (fresh.length > 3) {
+    const m = document.createElement("button"); m.type = "button"; m.className = "more";
+    m.textContent = alertsOpen ? "הצג פחות" : `הצג את כל ה-${fresh.length}`;
+    m.onclick = () => { alertsOpen = !alertsOpen; renderAlerts(); };
+    box.append(m);
+  }
+}
 function renderDeals() {
   const mineBox = $("dealsMine"); mineBox.textContent = "";
   if (!catalog.products.length) { $("dealsInfo").textContent = "טוען…"; return; }
   const ids = new Set([...favs, ...frequent(1), ...items.map(i => i.pid).filter(x => x != null)]);
   const mine = [...ids].map(id => byId.get(id)).filter(p => p && p.pr);
+  const fresh = regularAlerts().filter(a => a.kind === "sale" && !seenDeals.has(alertKey(a)));
+  if (fresh.length) { markSeen(fresh); renderAlerts(); }
   if (mine.length) {
     mineBox.append(Object.assign(document.createElement("p"), { className: "vsub", textContent: `${mine.length} מוצרים שאתם קונים נמצאים עכשיו במבצע:` }));
     const g = document.createElement("div"); g.className = "grid"; mine.forEach(p => g.append(cardFor(p))); mineBox.append(g);
