@@ -1,6 +1,6 @@
 // שומר את האפליקציה במכשיר כדי שתיפתח מהר וגם בלי אינטרנט בסופר.
 // כשמעלים גרסה חדשה: מעלים את VERSION, והטלפונים יתעדכנו בפתיחה הבאה.
-const VERSION = "v30";
+const VERSION = "v31";
 const SHELL = "shell-" + VERSION;
 const DATA = "data-v1";       // הקטלוג: לא נמחק בין גרסאות, כדי שתמיד יהיו מחירים
 const IMG = "img-v1";
@@ -26,7 +26,7 @@ self.addEventListener("fetch", e => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
 
-  if (url.hostname === "img.rami-levy.co.il") return e.respondWith(cacheFirst(req, IMG, true));
+  if (url.hostname === "img.rami-levy.co.il" || (url.hostname === "res.cloudinary.com" && url.pathname.startsWith("/shufersal/"))) return e.respondWith(cacheFirst(req, IMG, true));
   if (url.hostname === "www.gstatic.com" && url.pathname.startsWith("/firebasejs/")) return e.respondWith(cacheFirst(req, IMG, false));
   if (url.hostname === "fonts.gstatic.com") return e.respondWith(cacheFirst(req, FONTS, false));
   if (url.hostname === "fonts.googleapis.com") return e.respondWith(staleWhileRevalidate(req, FONTS, e));

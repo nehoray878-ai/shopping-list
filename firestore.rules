@@ -18,13 +18,20 @@ service cloud.firestore {
       allow update: if isAdmin()
         || (signedIn() && request.auth.uid == uid
             && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['blocked', 'first']));
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || (signedIn() && request.auth.uid == uid);   // כל אחד יכול למחוק את עצמו
     }
 
     // מיילים חסומים: כל מחובר יכול לבדוק מייל מסוים (לא לקבל רשימה), רק המנהל משנה
     match /blockedEmails/{email} {
       allow get: if signedIn();
       allow list, write: if isAdmin();
+    }
+
+    // תקלות מהטלפונים: כל מחובר יכול לדווח (רק להוסיף, בגודל סביר), רק המנהל קורא ומוחק
+    match /errors/{id} {
+      allow create: if signedIn() && request.resource.data.keys().hasOnly(['msg', 'where', 't', 'version', 'email', 'ua', 'standalone'])
+        && request.resource.data.msg is string && request.resource.data.msg.size() <= 300;
+      allow read, delete: if isAdmin();
     }
 
     // רשימה משותפת: רק למחוברים שלא נחסמו (מי שיודע את קוד הרשימה)

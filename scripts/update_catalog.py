@@ -266,6 +266,50 @@ def norm_index(online):
     return rev
 
 
+SHUF_IMG = "https://res.cloudinary.com/shufersal/image/upload/f_auto,q_auto/v1551800922/prod/product_images/products_medium/"  # 180px – חד בטלפון
+SHUF_RE = re.compile(r"/v1551800922/prod/product_images/products_small/(\w+?)_S_P_(\w+)_1\.png$")
+
+
+def shufersal_images():
+    """תמונות מוצרים מאתר שופרסל אונליין (כל הקטלוג, פעם בשבוע) -> {ברקוד: [קידומת, מק"ט]}.
+    לרוב המוצרים בלי תמונה ברמי לוי יש תמונה שם."""
+    path = STATE / "shufersal_images.json"
+    cached = load(path)
+    if cached and time.time() - path.stat().st_mtime < 7 * 86400:
+        return cached
+    out, page, pages = {}, 0, 1
+    try:
+        while page < pages:
+            url = f"https://www.shufersal.co.il/online/he/search/results?q=&limit=100&page={page}"
+            for attempt in range(3):
+                try:
+                    req = urllib.request.Request(url, headers={"User-Agent": sources.BROWSER_UA, "Accept": "application/json"})
+                    with urllib.request.urlopen(req, timeout=30) as r:
+                        d = json.load(r)
+                    break
+                except Exception:
+                    time.sleep(3)
+            else:
+                raise RuntimeError(f"עמוד {page} נכשל")
+            pages = d["pagination"]["numberOfPages"]
+            for x in d["results"]:
+                for im in x.get("images") or []:
+                    m = SHUF_RE.search(im.get("url") or "")
+                    if m:
+                        sku = m.group(2)
+                        code = "729000" + sku if sku.isdigit() and len(sku) == 7 else sku
+                        out[code] = [m.group(1), sku]
+                        break
+            page += 1
+            time.sleep(0.4)
+        log(f"תמונות שופרסל: {len(out)}")
+        dump(path, out)
+        return out
+    except Exception as e:
+        log("תמונות שופרסל לא זמינות, משתמשים במה שנשמר:", e)
+        return cached or {}
+
+
 def city_names():
     """סמל יישוב של הלמ"ס -> שם היישוב (רוב הרשתות כותבות רק את הסמל)."""
     path = STATE / "cities.json"
@@ -285,7 +329,7 @@ def city_names():
         return {}
 
 
-def build_chain(key, stores, online, rev, today):
+def build_chain(key, stores, online, rev, today, images=None):
     """קובץ רשת + קובץ לכל סניף. מחזיר את הסניפים שנבנו."""
     def code_of(c):
         if c in online:
@@ -363,11 +407,18 @@ def build_chain(key, stores, online, rev, today):
     unit_names = sorted({uu for _, uu in units.values()})
     uidx = {u: i for i, u in enumerate(unit_names)}
     cpl, cpr = table(chain_promos)
+    # תמונה ממאגר שופרסל למוצרים שאין להם תמונה ברמי לוי. קוד קצר הוא קוד פנימי – רק בשופרסל עצמה
+    im = {}
+    for c in names:
+        hit = (images or {}).get(c)
+        if hit and (len(c) >= 8 or key == "shufersal"):
+            im[c] = hit[0] if hit[1] == c or "729000" + hit[1] == c else f"{hit[0]}:{hit[1]}"
     dump(OUT / "chains" / f"{key}.json", {
         "key": key, "branches": n, "at": datetime.datetime.now().strftime("%d/%m %H:%M"),
         "codes": common, "price": [mode[c] for c in common],
         "units": unit_names, "u": {c: [r, uidx[uu]] for c, (r, uu) in units.items()},
         "names": names, "pl": cpl, "pr": cpr,
+        "imgBase": SHUF_IMG, "im": im,
     })
 
     pos = {c: i for i, c in enumerate(common)}
@@ -384,7 +435,7 @@ def build_chain(key, stores, online, rev, today):
             out["ch"] = ch
         dump(OUT / "branches" / key / f"{sid}.json", out)
         built.append(sid)
-    log(f"{key}: קובץ רשת עם {len(common)} מוצרים נפוצים, {len(names)} מוצרים בלי דף באתר, {len(chain_promos)} מבצעים נפוצים")
+    log(f"{key}: קובץ רשת עם {len(common)} מוצרים נפוצים, {len(names)} מוצרים בלי דף באתר ({len(im)} עם תמונה משופרסל), {len(chain_promos)} מבצעים נפוצים")
     return built
 
 
@@ -476,6 +527,7 @@ def main():
 
     rev = norm_index(online)
     cities = city_names()
+    images = shufersal_images()
     keep = {k: v for k, v in (old_index.get("stores") or {}).items()}
     for key, name, color, _ in chains:
         stores = found.get(key)
@@ -484,7 +536,7 @@ def main():
             if prev is None:
                 continue
             stores = [{"id": s[0], "name": s[1], "city": s[2], "address": s[3]} for s in prev]
-        built = set(build_chain(key, stores, online, rev, today))
+        built = set(build_chain(key, stores, online, rev, today, images))
         if not built:
             log(f"{key}: אין נתונים – משאירים את הקבצים של הפעם הקודמת")
             continue

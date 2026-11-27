@@ -7,7 +7,7 @@
 <title>רשימת הקניות</title>
 <meta name="description" content="רשימת קניות עם המחירים והמבצעים של הסניף שלך: רמי לוי, שופרסל, ויקטורי, יוחננוף, אושר עד וקרפור">
 <meta name="theme-color" content="#1E5A3C">
-<meta name="app-version" content="4.3">
+<meta name="app-version" content="4.4">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="קניות">
@@ -266,6 +266,28 @@ ul.items { list-style: none; margin: 0; padding: 0; display: grid; grid-template
 .alerts .hd strong .ico { width: 18px; height: 18px; }
 .alerts .x { color: var(--promo-fg); }
 .favs .tip { color: var(--muted); font-size: 0.86rem; margin: 0; }
+.bcard { display: flex; align-items: center; gap: 12px; }
+.bcard .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.bcard .tx strong { font-weight: 800; font-size: 1.02rem; display: flex; align-items: center; gap: 6px; }
+.bcard .tx strong .ico { color: #C99700; width: 18px; height: 18px; }
+.bcard .tx span { color: var(--muted); font-size: 0.84rem; }
+.bcard .btn { flex: none; }
+.favs .bcard + .bcard { border-top: 1px solid var(--line); padding-top: 10px; }
+.favs .row2 { display: flex; gap: 10px; align-items: center; }
+.blist { background: var(--surface); border-radius: var(--r-lg); overflow: hidden; }
+.brow { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-top: 1px solid var(--line); min-height: 58px; }
+.brow:first-child { border-top: 0; }
+.brow.off { opacity: .45; }
+.brow .thumb { width: 40px; height: 40px; flex: none; }
+.brow .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.brow .tx b { font-weight: 600; font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.brow .tx span { color: var(--muted); font-size: 0.8rem; }
+.brow .stepper { flex: none; }
+.bchk { flex: none; width: 28px; height: 28px; border-radius: 8px; border: 2px solid var(--line); background: transparent; display: grid; place-items: center; padding: 0; }
+.bchk span { display: none; width: 16px; height: 16px; }
+.bchk.on { background: var(--brand); border-color: var(--brand); }
+.bchk.on span { display: block; }
+.bfoot { position: sticky; bottom: -20px; background: var(--bg); padding: 10px 0 4px; display: flex; flex-direction: column; gap: 6px; align-items: stretch; }
 .fchips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
 .fchips::-webkit-scrollbar { display: none; }
 .fchip { flex: none; display: flex; align-items: center; gap: 6px; border: 0; background: var(--sunk); border-radius: 99px; padding: 4px 12px 4px 4px; font-size: 0.88rem; max-width: 210px; min-height: 40px; }
@@ -474,6 +496,7 @@ html.sheet-open, html.sheet-open body { overflow: hidden; overscroll-behavior: n
 .gate .linkbtn { color: var(--on-brand); }
 /* admin */
 .adm-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.adm-stats b { font-variant-numeric: tabular-nums; }
 .adm-stats div { background: var(--surface); border-radius: var(--r-md); padding: 10px; display: flex; flex-direction: column; }
 .adm-stats b { font-size: 1.3rem; font-weight: 800; }
 .adm-stats span { font-size: 0.78rem; color: var(--muted); }
@@ -578,6 +601,13 @@ ul.items.cartlist { grid-template-columns: minmax(0, 1fr); gap: 6px; }
 .rep { width: 34px; height: 38px; border: 0; border-radius: 10px; background: var(--sunk); color: var(--muted); display: grid; place-items: center; padding: 0; flex: none; }
 .rep .ico { width: 17px; height: 17px; }
 .rep.on { background: var(--lime); color: #171717; }
+.note-tag { display: block; font-size: 0.8rem; color: var(--fg); background: var(--sunk); border-radius: 8px; padding: 2px 8px; margin-top: 2px; width: fit-content; max-width: 100%; overflow-wrap: anywhere; }
+.note-tag::before { content: "✎ "; color: var(--muted); }
+.rep.has { background: var(--lime); color: #171717; }
+.noteedit { display: flex; gap: 6px; }
+.opt-h { margin: 6px 0 -4px; font-size: 0.95rem; font-weight: 800; }
+.noteedit .field { flex: 1; font-size: 0.95rem; padding: 7px 10px; }
+.noteedit .btn { min-height: 38px; padding: 6px 12px; }
 .rec-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 0.74rem; font-weight: 700; color: var(--down); }
 .rec-tag .ico { width: 13px; height: 13px; }
 .ropts { background: var(--surface); border-radius: var(--r-lg); overflow: hidden; display: flex; flex-direction: column; }
@@ -677,9 +707,9 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
     </div>
     <section class="voice" id="voicePanel" aria-live="polite" hidden></section>
     <section class="whatsnew" id="whatsNew" aria-labelledby="wnTitle" hidden></section>
+    <div class="favs" id="favs" hidden></div>
     <div class="alerts" id="alerts" hidden></div>
     <section class="alerts recsug" id="recSug" hidden></section>
-    <div class="favs" id="favs" hidden></div>
     <main id="list"></main>
   </div>
 
@@ -787,6 +817,8 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
     </div>
     <div class="spanel" id="storePanel" hidden></div>
     <div class="spanel" id="cmpPanel" hidden></div>
+    <div class="spanel" id="basketPanel" hidden></div>
+    <div class="spanel about" id="privacyPanel" hidden></div>
     <div class="spanel" id="adminPanel" hidden></div>
     <div class="spanel" id="listPanel" hidden></div>
     <div class="spanel" id="orderPanel" hidden></div>
@@ -809,6 +841,7 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
     <p class="gate-err" id="gateErr" role="alert"></p>
     <p class="gate-small">🔒 נשמרת רק כתובת המייל שכתבת, כדי לדעת מי משתמש באפליקציה. בלי סיסמה ובלי אישורים. הרשימות, הקניות וההיסטוריה שלך נשארות בטלפון שלך – אף אחד לא רואה אותן.</p>
     <button class="linkbtn" id="gateOut" type="button" hidden>כניסה עם מייל אחר</button>
+    <button class="linkbtn" id="gatePrivacy" type="button">מדיניות פרטיות</button>
   </div>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
@@ -818,7 +851,7 @@ const $ = id => document.getElementById(id);
 const LS_KEY = "shopping-list-v2";
 const fmt = n => "₪" + n.toFixed(2);
 const APP_VERSION = document.querySelector('meta[name="app-version"]').content;   // לעדכן ב-<head> בכל גרסה
-const WHATS_NEW_ID = "4.2";   // לשנות רק כשיש כרטיס "מה חדש" חדש להציג
+const WHATS_NEW_ID = "4.4";   // לשנות רק כשיש כרטיס "מה חדש" חדש להציג
 
 /* ---------- icons (one stroke style everywhere, instead of emoji) ---------- */
 const ICON_PATHS = {
@@ -842,6 +875,7 @@ const ICON_PATHS = {
   repeat: '<path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
   pin: '<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
+  dots: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
   menu: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
   chat: '<path d="M21 12a9 9 0 0 1-13.5 7.8L3 21l1.2-4.5A9 9 0 1 1 21 12z"/>',
 };
@@ -894,13 +928,25 @@ function newId() { return Date.now().toString(36) + Math.random().toString(36).s
 
 /* ---------- search ---------- */
 const norm = s => (s || "").toLowerCase().replace(/["'״׳`\-]/g, " ").replace(/\s+/g, " ").trim();
+// כתיב מלא/חסר ואותיות סופיות: "עגבנייה" = "עגבניה", "שוקולד" = "שקולד", "קוטג" = "קוטג'"
+const FINALS = { "ך": "כ", "ם": "מ", "ן": "נ", "ף": "פ", "ץ": "צ" };
+const loose = s => norm(s).replace(/א(?= |$)/g, "ה").replace(/[ךםןףץ]/g, c => FINALS[c]).replace(/[וי]/g, "").replace(/(.)\1+/g, "$1");
 function search(q, dept, limit) {
   const toks = norm(q).split(" ").filter(Boolean);
-  const out = [];
+  let out = [];
   for (const p of catalog.products) {
     if (dept && p.d !== dept) continue;
     if (toks.length && !toks.every(t => p._s.includes(t))) continue;
     out.push(p);
+  }
+  // מעט תוצאות? מחפשים שוב בלי הבדלי כתיב
+  if (toks.length && out.length < 5) {
+    const lt = toks.map(loose).filter(Boolean), seen = new Set(out);
+    for (const p of catalog.products) {
+      if (seen.has(p) || (dept && p.d !== dept)) continue;
+      if (!p._l) p._l = loose(p.n);
+      if (lt.every(t => p._l.includes(t))) out.push(p);
+    }
   }
   if (toks.length) {
     const first = toks[0];
@@ -939,6 +985,8 @@ function setQty(id, q) {
 function toggle(id) {
   const it = items.find(i => i.id === id); if (!it) return;
   it.done = !it.done; it.doneAt = it.done ? Date.now() : null; save(); renderAll();
+  // סימון בטעות בזמן קנייה – אפשר לבטל מיד
+  if (it.done) toast(`✓ בעגלה: ${it.name}`, "בטל", () => { it.done = false; it.doneAt = null; save(); renderAll(); }, 2500);
 }
 let undoItem = null;
 function remove(id) {
@@ -964,7 +1012,7 @@ function placeholder(name) {
 function thumb(p, name) {
   if (p && p.i) {
     const im = document.createElement("img");
-    im.className = "thumb"; im.loading = "lazy"; im.alt = ""; im.src = catalog.imgBase + p.i;
+    im.className = "thumb"; im.loading = "lazy"; im.alt = ""; im.src = /^https?:/.test(p.i) ? p.i : catalog.imgBase + p.i;
     im.onerror = () => im.replaceWith(placeholder(p.n));
     return im;
   }
@@ -1101,6 +1149,7 @@ function row(it) {
   const rec = !it.done && recOf(it);
   if (rec) { const t = document.createElement("span"); t.className = "rec-tag"; t.innerHTML = ico("repeat"); t.append(EVERY_TXT[rec.every]); body.append(t); }
   if (meta.textContent) body.append(meta);
+  if (it.note) body.append(Object.assign(document.createElement("span"), { className: "note-tag", textContent: it.note }));
   const chg = !it.done && chgTag(p, true); if (chg) body.append(chg);
   li.append(pic, body);
 
@@ -1120,8 +1169,9 @@ function row(it) {
   if (it.done) foot.append(Object.assign(document.createElement("span"), { className: "incart", textContent: "בעגלה" }));
   else {
     const ctrls = document.createElement("div"); ctrls.className = "ctrls";
-    const rb = document.createElement("button"); rb.type = "button"; rb.className = "rep" + (rec ? " on" : "");
-    rb.innerHTML = ico("repeat"); rb.setAttribute("aria-label", (rec ? "קנייה חוזרת: " + EVERY_TXT[rec.every] + ". שינוי: " : "להפוך לקנייה חוזרת: ") + it.name);
+    // כפתור אחד לאפשרויות: הערה, קנייה חוזרת, סל קבוע, מחיקה – כדי שלשם המוצר יישאר מקום
+    const rb = document.createElement("button"); rb.type = "button"; rb.className = "rep" + (rec || it.note ? " on" : "");
+    rb.innerHTML = ico("dots"); rb.setAttribute("aria-label", "אפשרויות: " + it.name);
     rb.onclick = () => openRecurPanel(it);
     ctrls.append(rb, stepper(it.qty, p, q => setQty(it.id, q)));
     foot.append(ctrls);
@@ -1518,7 +1568,7 @@ function cardFor(p) {
   const c = document.createElement("div"); const it = inList(p.id);
   c.className = "card" + (it ? " inlist" : "");
   const star = document.createElement("button"); star.type = "button"; star.className = "star" + (isFav(p.id) ? " on" : "");
-  star.innerHTML = ico("star", "ico", isFav(p.id)); star.setAttribute("aria-pressed", isFav(p.id) ? "true" : "false"); star.setAttribute("aria-label", (isFav(p.id) ? "הסרה מהקבועים: " : "הוספה לקבועים: ") + p.n);
+  star.innerHTML = ico("star", "ico", isFav(p.id)); star.setAttribute("aria-pressed", isFav(p.id) ? "true" : "false"); star.setAttribute("aria-label", (isFav(p.id) ? "הסרה מהסל הקבוע: " : "הוספה לסל הקבוע: ") + p.n);
   star.onclick = () => toggleFav(p);
   const im = document.createElement("div"); im.className = "img";
   im.append(thumb(p)); if (p.pr) im.append(sticker(it && it.qty >= p.pr.q && promoOk(p.pr)));
@@ -1612,18 +1662,49 @@ function renderAll() {
 function loadJSON(k, d) { try { const v = JSON.parse(localStorage.getItem(k) || "null"); return v ?? d; } catch { return d; } }
 function saveJSON(k, v) { store(k, JSON.stringify(v)); }
 
-/* ---------- regular items (favorites) ---------- */
-let favs = loadJSON("favs", []);            // מזהי מוצרים
+/* ---------- my basket: the shopping most people repeat every week ---------- */
+// סל = {id, name, items:[{pid, name, qty}]}. הסל הראשון הוא גם "הקבועים" (הכוכב במסך המוצרים)
+let baskets = loadJSON("baskets", null);
+if (!Array.isArray(baskets)) {   // מעבר מהקבועים הישנים
+  const old = loadJSON("favs", []);
+  baskets = old.length ? [{ id: "main", name: "הסל הקבוע שלי", items: old.map(pid => ({ pid, name: "", qty: 1 })) }] : [];
+}
+let favs = [];
+function saveBaskets() {
+  favs = baskets[0] ? baskets[0].items.filter(i => i.pid != null).map(i => i.pid) : [];
+  saveJSON("baskets", baskets); saveJSON("favs", favs);
+}
+saveBaskets();
 const isFav = id => favs.includes(id);
+function mainBasket() {
+  if (!baskets.length) baskets.push({ id: "main", name: "הסל הקבוע שלי", items: [] });
+  return baskets[0];
+}
 function toggleFav(p) {
-  if (isFav(p.id)) { favs = favs.filter(x => x !== p.id); toast(`הוסר מהקבועים: ${p.n}`); }
-  else { favs.push(p.id); toast(`נוסף לקבועים: ${p.n}`); }
-  saveJSON("favs", favs); renderAll();
+  const b = mainBasket();
+  if (isFav(p.id)) { b.items = b.items.filter(i => i.pid !== p.id); toast(`הוסר מהסל הקבוע: ${p.n}`); }
+  else { b.items.push({ pid: p.id, name: p.n, qty: 1 }); toast(`נוסף לסל הקבוע: ${p.n}`); }
+  saveBaskets(); renderAll();
 }
 function frequent(min = 2) {
   const cnt = new Map();
   for (const t of history) for (const it of new Set(t.items.map(x => x.pid).filter(x => x != null))) cnt.set(it, (cnt.get(it) || 0) + 1);
   return [...cnt.entries()].filter(([, n]) => n >= min).sort((a, b) => b[1] - a[1]).map(([id]) => id);
+}
+const bItemProduct = i => i.pid != null ? byId.get(i.pid) : null;
+const bItemInList = i => i.pid != null ? inList(i.pid) : mineAll().find(x => !x.done && x.pid == null && x.name === i.name);
+function basketTotal(b, only) {
+  return b.items.reduce((s, i) => { if (only && !only(i)) return s; const p = bItemProduct(i); return s + (p ? lineCost(p, i.qty) : 0); }, 0);
+}
+// הצעה: סל מהמוצרים שקונים כמעט בכל קנייה (אחרי 2 קניות לפחות), עם הכמות הרגילה
+function suggestedBasket() {
+  if (history.length < 2) return [];
+  const min = history.length >= 4 ? 3 : 2;
+  return frequent(min).slice(0, 40).map(pid => {
+    const qs = history.flatMap(t => t.items.filter(x => x.pid === pid).map(x => x.qty || 1)).sort((a, b) => a - b);
+    const p = byId.get(pid);
+    return p ? { pid, name: p.n, qty: qs[Math.floor(qs.length / 2)] || 1 } : null;
+  }).filter(Boolean);
 }
 function chip(p, onclick) {
   const b = document.createElement("button"); b.type = "button"; b.className = "fchip";
@@ -1634,35 +1715,151 @@ function renderFavs() {
   const box = $("favs"); box.textContent = "";
   if (!catalog.products.length) { box.hidden = true; return; }
   box.hidden = false;
-  const mine = favs.map(id => byId.get(id)).filter(Boolean);
-  const hd = document.createElement("div"); hd.className = "hd";
-  const title = document.createElement("strong");
-  if (mine.length) {
-    const missing = mine.filter(p => !inList(p.id));
-    title.innerHTML = ico("star", "ico", true); title.append(`הקבועים שלי (${mine.length})`);
-    hd.append(title);
-    if (missing.length) {
-      const all = document.createElement("button"); all.type = "button"; all.className = "toolbtn"; all.textContent = `הוספת כולם (${missing.length})`;
-      all.onclick = () => { missing.forEach(p => addProduct(p)); toast(`נוספו ${missing.length} מוצרים קבועים`); };
-      hd.append(all);
-      const row = document.createElement("div"); row.className = "fchips";
-      missing.forEach(p => row.append(chip(p, () => addProduct(p))));
-      box.append(hd, row);
-    } else {
-      box.append(hd, Object.assign(document.createElement("p"), { className: "tip", textContent: "כל הקבועים כבר ברשימה ✓" }));
+  const live = baskets.filter(b => b.items.length);
+  if (live.length) {
+    for (const b of live) {
+      const left = b.items.filter(i => !bItemInList(i));
+      const card = document.createElement("div"); card.className = "bcard";
+      const tx = document.createElement("div"); tx.className = "tx";
+      const title = document.createElement("strong"); title.innerHTML = ico("star", "ico", true); title.append(b.name);
+      const total = basketTotal(b);
+      tx.append(title, Object.assign(document.createElement("span"), { textContent: `${b.items.length} מוצרים` + (total ? ` · כ-${fmt(total)}` : "") + (left.length < b.items.length ? ` · ${b.items.length - left.length} כבר ברשימה` : "") }));
+      const go = document.createElement("button"); go.type = "button"; go.className = "btn"; go.textContent = left.length ? "להוסיף לרשימה" : "הכול ברשימה ✓";
+      go.onclick = () => openBasket(b.id);
+      card.append(tx, go);
+      box.append(card);
     }
     return;
   }
-  const sug = frequent().map(id => byId.get(id)).filter(p => p && !inList(p.id)).slice(0, 12);
-  if (sug.length) {
-    title.textContent = "קונים הרבה";
+  const sug = read("basket-sug-off") ? [] : suggestedBasket();
+  if (sug.length >= 3) {
+    const hd = document.createElement("div"); hd.className = "hd";
+    const title = document.createElement("strong"); title.innerHTML = ico("star", "ico", true); title.append("הצעה: סל קבוע");
     hd.append(title);
-    const row = document.createElement("div"); row.className = "fchips";
-    sug.forEach(p => row.append(chip(p, () => addProduct(p))));
-    box.append(hd, row, Object.assign(document.createElement("p"), { className: "tip", textContent: "טיפ: לחיצה על הכוכב במסך המוצרים שומרת מוצר בקבועים, ואז אפשר להוסיף את כולם בלחיצה אחת." }));
-  } else {
-    box.append(Object.assign(document.createElement("p"), { className: "tip", textContent: "טיפ: סמנו כוכב על המוצרים שאתם קונים כל שבוע (במסך המוצרים), ואז תוכלו להוסיף את כולם לרשימה בלחיצה אחת." }));
+    const p = Object.assign(document.createElement("p"), { className: "tip", textContent: `מצאנו ${sug.length} מוצרים שאתם קונים כמעט בכל קנייה. שומרים אותם כסל קבוע, ובפעם הבאה מוסיפים את כולם בלחיצה – ומורידים רק את מה שלא צריך.` });
+    const acts = document.createElement("div"); acts.className = "row2";
+    const make = document.createElement("button"); make.type = "button"; make.className = "btn"; make.textContent = "ליצור את הסל";
+    make.onclick = () => { const b = mainBasket(); b.items = sug; saveBaskets(); renderAll(); openBasket(b.id, true); toast("נוצר סל קבוע – אפשר לערוך אותו"); };
+    const no = document.createElement("button"); no.type = "button"; no.className = "linkbtn"; no.textContent = "לא עכשיו";
+    no.onclick = () => { store("basket-sug-off", "1"); renderFavs(); };
+    acts.append(make, no);
+    box.append(hd, p, acts);
+    return;
   }
+  const hd = document.createElement("div"); hd.className = "hd";
+  const title = document.createElement("strong"); title.innerHTML = ico("star", "ico", true); title.append("הסל הקבוע");
+  hd.append(title);
+  box.append(hd, Object.assign(document.createElement("p"), { className: "tip", textContent: "רוב הקנייה חוזרת כל שבוע? שמרו אותה כסל קבוע, ובפעם הבאה תוסיפו הכול בלחיצה אחת." }));
+  if (mineAll().some(i => !i.done)) {
+    const save = document.createElement("button"); save.type = "button"; save.className = "btn ghost"; save.textContent = "לשמור את הרשימה הנוכחית כסל";
+    save.onclick = () => { saveListAsBasket(mainBasket()); openBasket(baskets[0].id, true); };
+    box.append(save);
+  } else box.lastChild.textContent += " אפשר גם לסמן כוכב על מוצר במסך המוצרים.";
+}
+function saveListAsBasket(b) {
+  let n = 0;
+  for (const it of mineAll().filter(i => !i.done)) {
+    const ex = b.items.find(i => it.pid != null ? i.pid === it.pid : i.pid == null && i.name === it.name);
+    if (ex) ex.qty = it.qty; else { b.items.push({ pid: it.pid ?? null, name: it.name, qty: it.qty || 1 }); n++; }
+  }
+  saveBaskets(); renderAll();
+  toast(n ? `נשמרו ${n} מוצרים בסל "${b.name}"` : "הסל עודכן");
+}
+
+// מסך הסל: כל המוצרים מסומנים, מורידים את מה שלא צריך הפעם ומוסיפים בלחיצה
+let basketSel = null;
+function openBasket(id, edit = false) {
+  const b = baskets.find(x => x.id === id); if (!b) return;
+  basketSel = new Map(b.items.map((i, k) => [k, { on: !bItemInList(i), qty: i.qty }]));
+  sheetShow("basketPanel", b.name);
+  renderBasket(b, edit);
+}
+function renderBasket(b, edit) {
+  const panel = $("basketPanel"); panel.textContent = "";
+  if (baskets.length > 1 || edit) {
+    const tabs = document.createElement("div"); tabs.className = "sugg";
+    for (const x of baskets) {
+      const t = document.createElement("button"); t.type = "button"; t.className = "dchip" + (x === b ? " on" : ""); t.textContent = x.name;
+      t.onclick = () => openBasket(x.id, edit); tabs.append(t);
+    }
+    if (edit) {
+      const add = document.createElement("button"); add.type = "button"; add.className = "dchip"; add.textContent = "＋ סל חדש";
+      add.onclick = () => { const nb = { id: newId(), name: baskets.length === 1 ? "קנייה לשבת" : `סל ${baskets.length + 1}`, items: [] }; baskets.push(nb); saveBaskets(); openBasket(nb.id, true); };
+      tabs.append(add);
+    }
+    panel.append(tabs);
+  }
+  if (edit) {
+    const nm = document.createElement("input"); nm.className = "field"; nm.value = b.name; nm.maxLength = 30; nm.setAttribute("aria-label", "שם הסל");
+    nm.onchange = () => { b.name = nm.value.trim() || b.name; saveBaskets(); $("sheetTitle").textContent = b.name; renderAll(); };
+    panel.append(nm);
+  } else {
+    panel.append(Object.assign(document.createElement("p"), { textContent: "הכול מסומן. מורידים את הסימון ממה שלא צריך הפעם, ומשנים כמות אם צריך." }));
+  }
+  const list = document.createElement("div"); list.className = "blist";
+  b.items.forEach((i, k) => {
+    const p = bItemProduct(i); if (p && !i.name) i.name = p.n;
+    const st = basketSel.get(k) || { on: true, qty: i.qty };
+    const already = bItemInList(i);
+    const r = document.createElement("div"); r.className = "brow" + (st.on || edit ? "" : " off");
+    if (!edit) {
+      const cb = document.createElement("button"); cb.type = "button"; cb.className = "bchk" + (st.on ? " on" : "");
+      cb.innerHTML = `<span>${checkSvg}</span>`; cb.setAttribute("aria-pressed", st.on ? "true" : "false"); cb.setAttribute("aria-label", "לכלול: " + i.name);
+      cb.onclick = () => { st.on = !st.on; basketSel.set(k, st); renderBasket(b, edit); };
+      r.append(cb);
+    }
+    r.append(thumb(p, i.name));
+    const tx = document.createElement("span"); tx.className = "tx";
+    tx.append(Object.assign(document.createElement("b"), { textContent: i.name || "מוצר" }),
+      Object.assign(document.createElement("span"), { textContent: already ? "כבר ברשימה" : p ? fmt(lineCost(p, st.qty)) : "לא נמכר בסניף הזה – יתווסף בלי מחיר" }));
+    r.append(tx);
+    if (edit) {
+      r.append(stepper(i.qty, p, q => { if (q <= 0) { b.items.splice(k, 1); basketSel = new Map(b.items.map((x, n) => [n, { on: true, qty: x.qty }])); } else i.qty = q; saveBaskets(); renderBasket(b, edit); }));
+    } else if (st.on) {
+      r.append(stepper(st.qty, p, q => { st.qty = q <= 0 ? stepOf(p) : q; basketSel.set(k, st); renderBasket(b, edit); }));
+    }
+    list.append(r);
+  });
+  if (!b.items.length) list.append(Object.assign(document.createElement("p"), { textContent: "הסל ריק. סמנו כוכב על מוצרים, או שמרו את הרשימה הנוכחית כסל.", style: "margin:14px;color:var(--muted)" }));
+  panel.append(list);
+
+  const foot = document.createElement("div"); foot.className = "bfoot";
+  if (edit) {
+    if (mineAll().some(i => !i.done)) {
+      const fromList = document.createElement("button"); fromList.type = "button"; fromList.className = "btn ghost"; fromList.textContent = "＋ להוסיף לסל את כל מה שברשימה";
+      fromList.onclick = () => { saveListAsBasket(b); openBasket(b.id, true); };
+      foot.append(fromList);
+    }
+    const done = document.createElement("button"); done.type = "button"; done.className = "btn"; done.textContent = "סיום עריכה";
+    done.onclick = () => openBasket(b.id, false);
+    foot.append(done);
+    const del = document.createElement("button"); del.type = "button"; del.className = "linkbtn"; del.textContent = "מחיקת הסל";
+    let sure = false;
+    del.onclick = () => {
+      if (!sure) { sure = true; del.textContent = "בטוח? ללחוץ שוב כדי למחוק"; del.classList.add("confirm"); return; }
+      baskets = baskets.filter(x => x !== b); saveBaskets(); closeSheet(); renderAll(); toast(`הסל "${b.name}" נמחק`);
+    };
+    foot.append(del);
+  } else {
+    const chosen = b.items.map((i, k) => [i, basketSel.get(k)]).filter(([, st]) => st && st.on);
+    const listBaseSaved = listBase;
+    const total = chosen.reduce((s, [i, st]) => { const p = bItemProduct(i); return s + (p ? lineCost(p, st.qty) : 0); }, 0);
+    listBase = listBaseSaved;
+    const add = document.createElement("button"); add.type = "button"; add.className = "btn"; add.disabled = !chosen.length;
+    add.textContent = chosen.length ? `הוספת ${chosen.length} מוצרים לרשימה` + (total ? ` · ${fmt(total)}` : "") : "לא נבחרו מוצרים";
+    add.onclick = () => {
+      for (const [i, st] of chosen) {
+        const p = bItemProduct(i);
+        if (p) { const ex = inList(p.id); if (ex) ex.qty = st.qty; else items.push({ id: newId(), list: currentList, pid: p.id, name: p.n, qty: st.qty, done: false, createdAt: Date.now(), doneAt: null }); }
+        else if (!bItemInList(i)) items.push({ id: newId(), list: currentList, pid: null, name: i.name, qty: st.qty, done: false, createdAt: Date.now(), doneAt: null });
+      }
+      save(); closeSheet(); renderAll(); toast(`נוספו ${chosen.length} מוצרים מהסל`);
+    };
+    const edt = document.createElement("button"); edt.type = "button"; edt.className = "linkbtn"; edt.textContent = "עריכת הסל";
+    edt.onclick = () => renderBasket(b, true);
+    foot.append(add, edt);
+  }
+  panel.append(foot);
 }
 
 /* ---------- recurring products: come back to the list by themselves ---------- */
@@ -1704,6 +1901,24 @@ function recurAfterTrip(done) {
 function openRecurPanel(it) {
   const box = $("recurPanel"); box.textContent = "";
   const cur = recOf(it);
+  // הערה למוצר
+  const nh = Object.assign(document.createElement("h4"), { className: "opt-h", textContent: "הערה" });
+  const nf = document.createElement("form"); nf.className = "noteedit";
+  const inp = document.createElement("input"); inp.className = "field"; inp.maxLength = 80; inp.value = it.note || "";
+  inp.placeholder = "למשל: הירוק, לא האדום / רק אם במבצע"; inp.setAttribute("aria-label", "הערה ל" + it.name);
+  const ok = document.createElement("button"); ok.type = "submit"; ok.className = "btn"; ok.textContent = "שמירה";
+  nf.onsubmit = e => { e.preventDefault(); const v = inp.value.trim(); if (v) it.note = v; else delete it.note; save(); closeSheet(); renderAll(); toast(v ? "ההערה נשמרה" : "ההערה נמחקה"); };
+  nf.append(inp, ok);
+  box.append(nh, nf);
+  // סל קבוע
+  const p = product(it);
+  if (p) {
+    const fb = document.createElement("button"); fb.type = "button"; fb.className = "btn ghost";
+    fb.innerHTML = ico("star", "ico", isFav(p.id)); fb.append(isFav(p.id) ? " בסל הקבוע ✓ (להסיר)" : " להוסיף לסל הקבוע");
+    fb.onclick = () => { toggleFav(p); closeSheet(); };
+    box.append(Object.assign(document.createElement("h4"), { className: "opt-h", textContent: "סל קבוע" }), fb);
+  }
+  box.append(Object.assign(document.createElement("h4"), { className: "opt-h", textContent: "קנייה חוזרת" }));
   box.append(Object.assign(document.createElement("p"), { textContent: `"${it.name}" יחזור לרשימה לבד, בלי שתצטרכו להוסיף אותו שוב.` }));
   const opts = document.createElement("div"); opts.className = "ropts"; opts.setAttribute("role", "radiogroup");
   const choose = every => {
@@ -1718,7 +1933,10 @@ function openRecurPanel(it) {
   }
   if (cur) { const off = document.createElement("button"); off.type = "button"; off.className = "ropt off"; off.textContent = "לא חוזר יותר"; off.onclick = () => choose(null); opts.append(off); }
   box.append(opts);
-  sheetShow("recurPanel", "קנייה חוזרת");
+  const del = document.createElement("button"); del.type = "button"; del.className = "linkbtn"; del.textContent = "מחיקה מהרשימה";
+  del.onclick = () => { closeSheet(); remove(it.id); };
+  box.append(del);
+  sheetShow("recurPanel", it.name); $("sheetBack").hidden = true;
 }
 function renderRecurList() {
   const box = $("recurList"); box.textContent = "";
@@ -1975,7 +2193,7 @@ function tripEditor(t) {
 }
 
 /* ---------- backup & restore ---------- */
-const BACKUP_KEYS = ["shopping-list-v2", "lists", "cur-list", "favs", "history", "dept-order", "big-text", "closed-groups", "budget", "cat-sort", "seen-deals", "compact-view", "sg-sort", "keep-awake", "recurring", "recur-dismissed", "theme", "branch", "cmp-branches"];
+const BACKUP_KEYS = ["shopping-list-v2", "lists", "cur-list", "favs", "history", "dept-order", "big-text", "closed-groups", "budget", "cat-sort", "seen-deals", "compact-view", "sg-sort", "keep-awake", "recurring", "recur-dismissed", "theme", "branch", "cmp-branches", "baskets"];
 function backupPanel() {
   const panel = document.createElement("div"); panel.className = "panel";
   panel.innerHTML = "<h3>גיבוי ושחזור</h3><p>כל הנתונים (רשימות, קבועים והיסטוריה) שמורים רק בטלפון הזה. כדאי לשמור גיבוי מדי פעם: בקובץים, בדרייב או בהודעה לעצמכם בוואטסאפ.</p>";
@@ -2181,7 +2399,7 @@ $("dealsForm").addEventListener("submit", e => { e.preventDefault(); $("dealsInp
 $("dealsMore").onclick = () => { dealsShown += 40; renderDeals(); };
 
 /* ---------- settings sheet ---------- */
-const SHEET_PANELS = ["storePanel", "cmpPanel", "adminPanel", "sheetMenu", "listPanel", "orderPanel", "sharePanel", "backupBox", "aboutBox", "recurPanel", "recurList"];
+const SHEET_PANELS = ["storePanel", "cmpPanel", "basketPanel", "privacyPanel", "adminPanel", "sheetMenu", "listPanel", "orderPanel", "sharePanel", "backupBox", "aboutBox", "recurPanel", "recurList"];
 function menuItem(btn, icon, label, end = ico("chev", "ico chev")) {
   btn.innerHTML = ico(icon) + `<span class="lbl"></span>` + end;
   btn.querySelector(".lbl").textContent = label;
@@ -2239,7 +2457,8 @@ function renderAbout() {
         ? "בכניסה נשמרת רק כתובת המייל שכתבת ומתי נכנסת – כדי לדעת מי משתמש באפליקציה. מה שאתם קונים, הרשימות, הסניף, התקציב וההיסטוריה נשמרים רק בטלפון הזה ואף אחד לא רואה אותם. (אם תפעילו רשימה משותפת, היא נשמרת גם בענן כדי שתופיע אצל מי שקיבל את הקוד.) אין פרסומות."
         : "הרשימות, הקבועים, התקציב וההיסטוריה נשמרים רק בטלפון הזה. אין הרשמה, אין מעקב ואין פרסומות."),
       P("כדי לא לאבד נתונים כשמחליפים טלפון, כדאי לשמור גיבוי מדי פעם (בתפריט ההגדרות).")),
-    card("", P("האפליקציה פרטית ואינה קשורה לאף רשת שיווק.")),
+    card("", P("האפליקציה פרטית ואינה קשורה לאף רשת שיווק. תמונות המוצרים מאתרי רמי לוי אונליין ושופרסל אונליין, והמחירים מהמחירונים הרשמיים של הרשתות."),
+      Object.assign(document.createElement("button"), { type: "button", className: "linkbtn", textContent: "מדיניות פרטיות ומחיקת נתונים", onclick: openPrivacy })),
     ...(FIREBASE_CONFIG && !isAdmin() ? [Object.assign(document.createElement("button"), { type: "button", className: "linkbtn", textContent: "כניסת מנהל", onclick: adminLogin })] : []),
   );
 }
@@ -2291,7 +2510,7 @@ function listText() {
   const lines = [`🛒 ${lists.length > 1 ? curName() : "רשימת קניות"}${catalog.branch ? ` – ${catalog.branch.chainName} ${catalog.branch.name}` : ""}`];
   for (const [d, its] of [...groups.entries()].sort((a, b) => rank(a[0]) - rank(b[0]))) {
     lines.push("", `*${d}*`);
-    its.sort((a, b) => coll.compare(a.name, b.name)).forEach(i => lines.push(`• ${i.name}${qtySuffix(i.qty, product(i))}`));
+    its.sort((a, b) => coll.compare(a.name, b.name)).forEach(i => lines.push(`• ${i.name}${qtySuffix(i.qty, product(i))}${i.note ? ` (${i.note})` : ""}`));
   }
   const total = open.reduce((s, i) => s + lineCost(product(i), i.qty), 0);
   if (total) lines.push("", `סה"כ משוער: ${fmt(total)}`);
@@ -2378,7 +2597,7 @@ async function ensureFirebase() {
   return db;
 }
 const itemsRef = code => db.collection("lists").doc(code).collection("items");
-function toDoc(it) { return { list: it.list || "main", pid: it.pid ?? null, name: it.name, qty: it.qty, done: !!it.done, createdAt: it.createdAt || Date.now(), doneAt: it.doneAt ?? null }; }
+function toDoc(it) { return { list: it.list || "main", pid: it.pid ?? null, name: it.name, qty: it.qty, done: !!it.done, createdAt: it.createdAt || Date.now(), doneAt: it.doneAt ?? null, note: it.note || null }; }
 const same = (a, b) => JSON.stringify(toDoc(a)) === JSON.stringify(toDoc(b));
 
 // כל שינוי ברשימה עובר דרך save(): שולחים לענן רק את מה שהשתנה
@@ -2400,8 +2619,14 @@ function setSync(state) {
   if (!$("sharePanel").hidden) renderSharePanel();
 }
 
+// הרשימה המשותפת צריכה משתמש מחובר (גם אורח) – מחכים שהכניסה ברקע תסתיים
+function authReady() {
+  return ensureFirebase().then(() => new Promise(res => {
+    const un = firebase.auth().onAuthStateChanged(u => { if (u) { un(); res(u); } });
+  }));
+}
 async function connect(code, uploadLocal) {
-  await ensureFirebase();
+  await authReady();
   if (unsub) unsub();
   listCode = code; store("list-code", code);
   last = new Map();
@@ -2547,9 +2772,10 @@ function renderWhatsNew() {
   const box = $("whatsNew");
   box.innerHTML = `<div class="wn-hd"><span class="wn-badge">חדש</span><h2 id="wnTitle">חדש באפליקציה</h2></div>
     <ul>
-      <li><b>בחירת רשת וסניף:</b> רמי לוי, שופרסל, ויקטורי, יוחננוף, אושר עד וקרפור. אצלכם לא השתנה כלום – נשארתם ברמי לוי עפולה. להחלפה: בכפתור ${ico("menu")} למעלה.</li>
-      <li><b>השוואת סל:</b> מתחת לסכום – כמה הרשימה שלכם עולה בסניפים אחרים בעיר.</li>
-      <li>הרשימות, הקבועים וההיסטוריה שלכם נשארו בדיוק כמו שהיו.</li>
+      <li><b>הסל הקבוע:</b> כל הקנייה הקבועה בלחיצה אחת – מורידים רק את מה שלא צריך הפעם. אחרי כמה קניות האפליקציה מציעה סל לבד.</li>
+      <li><b>הערה למוצר</b> ("הירוק, לא האדום") ועוד אפשרויות – בכפתור ${ico("dots")} ליד כל מוצר.</li>
+      <li><b>רשימה משותפת:</b> שיתוף עם המשפחה בתפריט ${ico("menu")} – כל שינוי מופיע מיד אצל כולם.</li>
+      <li>החיפוש מבין גם שגיאות כתיב, ולהרבה יותר מוצרים יש תמונה.</li>
     </ul>
     <div class="acts"><button class="btn" type="button" data-a="ok">הבנתי, תודה</button></div>`;
   const done = () => { store("whats-new", WHATS_NEW_ID); box.hidden = true; };
@@ -2566,11 +2792,21 @@ function loadError(box) {
   const b = document.createElement("button"); b.type = "button"; b.className = "btn"; b.textContent = "לנסות שוב"; b.onclick = loadCatalog;
   e.append(b); box.append(e);
 }
+// "27/11 12:00" (בלי שנה) -> כמה ימים עברו
+function priceAgeDays(at) {
+  const m = /^(\d{1,2})\/(\d{1,2})/.exec(at || ""); if (!m) return 0;
+  const now = new Date(); let t = new Date(now.getFullYear(), +m[2] - 1, +m[1]);
+  if (t - now > 864e5 * 30) t = new Date(now.getFullYear() - 1, +m[2] - 1, +m[1]);   // דצמבר שנצפה בינואר
+  return Math.max(0, Math.floor((now - t) / 864e5));
+}
 function applyCatalog(d) {
   d.products.forEach(p => p._s = norm(p.n + " " + p.b));
   catalog = d; byId = new Map(d.products.map(p => [p.id, p])); groupIdx = null; loaded = true; loadFailed = false;
   const br = d.branch;
   $("sub").textContent = `${br.chainName} ${br.name} · מחירי הסניף מ-${br.at}`;
+  // המחירים מתעדכנים פעמיים ביום. אם העדכון נתקע – אומרים למשתמש, כדי שלא יסמוך על מחיר ישן
+  const age = priceAgeDays(d.updated);
+  if (age >= 2) $("sub").textContent += ` · ⚠️ המחירים לא עודכנו ${age} ימים`;
   $("note").textContent = `${d.products.length.toLocaleString("he-IL")} מוצרים · מחירים ומבצעים מהמחירון הרשמי של ${br.chainName} ${br.name}. מבצעי מועדון לא כלולים.`;
   renderStoreBtn(); renderDepts(); renderAll(); runRecurring();
 }
@@ -2613,10 +2849,13 @@ function buildCatalog(base, chain, br, sel) {
     if (seen.has(c)) continue;
     const nm = chain.names[c]; if (!nm) continue;
     const id = sel.chain === "ramilevy" || c.length >= 8 ? "s" + c : `s${sel.chain}:${c}`;   // קוד קצר = קוד פנימי של הרשת
-    extra.push(decorate({ id, b: c, n: nm[0], p, d: "", i: "", k: nm[1] }, c));
+    // תמונה ממאגר שופרסל (אם יש): "קידומת" או "קידומת:מק"ט"
+    const im = chain.im && chain.im[c];
+    const img = im ? (([pfx, sku]) => `${chain.imgBase}${pfx}_M_P_${sku || (c.startsWith("729000") && c.length === 13 ? c.slice(6) : c)}_1.png`)(im.split(":")) : "";
+    extra.push(decorate({ id, b: c, n: nm[0], p, d: "", i: img, k: nm[1] }, c));
   }
   const coll = new Intl.Collator("he");
-  extra.sort((a, b) => coll.compare(a.n, b.n));
+  extra.sort((a, b) => (!a.i - !b.i) || coll.compare(a.n, b.n));   // עם תמונה קודם
   return { products: products.concat(extra), imgBase: base.imgBase, updated: chain.at,
     branch: { ...sel, at: br.at, chainName: sel.chainName } };
 }
@@ -3017,7 +3256,8 @@ async function onUser(u) {
   }
 }
 function initAuth() {
-  if (!FIREBASE_CONFIG) { startApp(); return; }
+  // בבדיקות על המחשב (localhost + dev-no-auth) – בלי כניסה, כדי לא ליצור משתמשי בדיקה ב-Firebase
+  if (!FIREBASE_CONFIG || (location.hostname === "localhost" && read("dev-no-auth"))) { startApp(); return; }
   // מי שכבר נכנס בטלפון הזה נכנס מיד, גם בלי אינטרנט בסופר
   if (read("auth-email")) startApp(); else showGate();
   ensureFirebase().then(() => {
@@ -3049,20 +3289,87 @@ async function adminLogin() {
   } catch (e) { if (e && e.code !== "auth/popup-closed-by-user") toast("הכניסה לא הצליחה"); }
 }
 
+/* ---------- privacy policy + delete my data ---------- */
+function openPrivacy() {
+  const box = $("privacyPanel"); box.textContent = "";
+  const card = (title, ...lines) => {
+    const c = document.createElement("div"); c.className = "card-a";
+    c.append(Object.assign(document.createElement("h3"), { textContent: title }));
+    for (const l of lines) c.append(Object.assign(document.createElement("p"), { textContent: l }));
+    box.append(c); return c;
+  };
+  card("מה נשמר עליך",
+    "רק כתובת המייל שכתבת בכניסה, מתי נכנסת לראשונה ולאחרונה, גרסת האפליקציה והאם היא מותקנת במסך הבית.",
+    "אם משהו נתקע באפליקציה, נשלח דיווח תקלה טכני (הודעת השגיאה, סוג הטלפון והדפדפן) כדי שנוכל לתקן.");
+  card("מה לא נשמר",
+    "הרשימות, מה שקנית, הסל הקבוע, התקציב, ההיסטוריה והסניף שבחרת – נשארים רק בטלפון שלך. אף אחד לא רואה אותם.",
+    "אין סיסמה, אין מעקב אחרי מיקום, אין פרסומות, והנתונים לא נמכרים ולא מועברים לאף אחד.");
+  card("רשימה משותפת",
+    "רק אם תפעילו רשימה משותפת עם המשפחה, הפריטים שבה נשמרים גם בענן, כדי שיופיעו אצל כל מי שקיבל את הקוד.");
+  card("איפה ומי רואה",
+    "הנתונים שמורים ב-Google Firebase (שרתים באירופה). רק מנהל האפליקציה רואה את רשימת המיילים, ומשתמש בה רק כדי לדעת מי משתמש באפליקציה.",
+    "הנתונים נשמרים עד שתמחקו אותם.");
+  const del = card("מחיקת הנתונים שלי", "מוחק את המייל ואת פרטי הכניסה שלך מהענן ומוציא אותך מהאפליקציה. הרשימות בטלפון נשארות.");
+  if (FIREBASE_CONFIG && me) {
+    const b = document.createElement("button"); b.type = "button"; b.className = "btn ghost"; b.textContent = "למחוק את הנתונים שלי";
+    let sure = false;
+    b.onclick = async () => {
+      if (!sure) { sure = true; b.textContent = "בטוח? ללחוץ שוב כדי למחוק"; return; }
+      b.disabled = true;
+      try {
+        await db.collection("users").doc(me.uid).delete();
+        store("auth-email", null); store("auth-uid", null);
+        if (me.isAnonymous) await me.delete().catch(() => {}); else await firebase.auth().signOut();
+        closeSheet(); location.reload();
+      } catch { b.disabled = false; b.textContent = "המחיקה לא הצליחה. נסו שוב."; }
+    };
+    del.append(b);
+  }
+  sheetShow("privacyPanel", "מדיניות פרטיות");
+  if (!startedApp) $("sheetBack").hidden = true;
+}
+$("gatePrivacy").onclick = openPrivacy;
+
+/* ---------- error log: when something breaks on someone's phone, the admin sees it ---------- */
+const errSent = new Set();
+function logError(msg, where) {
+  try {
+    msg = String(msg || "").slice(0, 300);
+    if (!msg || errSent.size >= 5 || errSent.has(msg) || !db || !me) return;
+    errSent.add(msg);
+    db.collection("errors").add({ msg, where: String(where || "").slice(0, 200), t: Date.now(), version: APP_VERSION, email: myEmail(),
+      ua: navigator.userAgent.slice(0, 160), standalone: !!standalone }).catch(() => {});
+  } catch {}
+}
+addEventListener("error", e => logError(e.message, `${(e.filename || "").split("/").pop()}:${e.lineno}`));
+addEventListener("unhandledrejection", e => logError(e.reason && (e.reason.message || e.reason), "promise"));
+
 /* ---------- admin: who uses the app, block / unblock ---------- */
 menuItem($("adminBtn"), "rows", "ניהול משתמשים");
 $("adminBtn").onclick = () => { sheetShow("adminPanel", "ניהול משתמשים"); renderAdmin(); };
 async function renderAdmin() {
   const panel = $("adminPanel"); panel.textContent = "";
   panel.append(Object.assign(document.createElement("p"), { textContent: "טוען…" }));
-  let users;
-  try { users = (await db.collection("users").orderBy("last", "desc").get()).docs.map(d => ({ uid: d.id, ...d.data() })); }
+  let users, errors = [];
+  try {
+    const docs = (await db.collection("users").orderBy("last", "desc").get()).docs.map(d => ({ uid: d.id, ...d.data() }));
+    // שורה אחת לכל מייל (טלפון ומחשב של אותו אדם)
+    const byEmail = new Map();
+    for (const u of docs) {
+      const k = u.email || u.uid, g = byEmail.get(k);
+      if (!g) byEmail.set(k, { ...u, uids: [u.uid], devices: 1 });
+      else { g.uids.push(u.uid); g.devices++; g.first = Math.min(g.first || u.first, u.first || g.first); g.blocked = g.blocked || u.blocked; g.standalone = g.standalone || u.standalone; }
+    }
+    users = [...byEmail.values()];
+    errors = (await db.collection("errors").orderBy("t", "desc").limit(20).get().catch(() => ({ docs: [] }))).docs.map(d => d.data());
+  }
   catch (e) { panel.querySelector("p").textContent = "אין גישה לרשימת המשתמשים (בדקו את כללי האבטחה)."; return; }
   panel.textContent = "";
   const day = 864e5, now = Date.now();
   const stats = document.createElement("div"); stats.className = "adm-stats";
   const stat = (n, l) => { const d = document.createElement("div"); d.append(Object.assign(document.createElement("b"), { textContent: n }), Object.assign(document.createElement("span"), { textContent: l })); stats.append(d); };
-  stat(users.length, "משתמשים"); stat(users.filter(u => now - u.last < 7 * day).length, "פעילים השבוע"); stat(users.filter(u => u.first && now - u.first < 7 * day).length, "חדשים השבוע");
+  stat(users.length, "משתמשים"); stat(users.filter(u => now - u.last < day).length, "נכנסו היום"); stat(users.filter(u => now - u.last < 7 * day).length, "פעילים השבוע");
+  stat(users.filter(u => u.first && now - u.first < 7 * day).length, "חדשים השבוע"); stat(users.filter(u => u.standalone).length, "התקינו במסך הבית"); stat(users.filter(u => u.blocked).length, "חסומים");
   const q = document.createElement("input"); q.className = "field"; q.type = "search"; q.placeholder = "חיפוש לפי מייל"; q.autocomplete = "off";
   const list = document.createElement("div"); list.className = "cmplist";
   const when = t => { if (!t) return ""; const d = Math.floor((now - t) / day); return d <= 0 ? "היום" : d === 1 ? "אתמול" : `לפני ${d} ימים`; };
@@ -3074,16 +3381,16 @@ async function renderAdmin() {
       const av = Object.assign(document.createElement("span"), { className: "av", textContent: (u.email || "?")[0].toUpperCase() });
       const tx = document.createElement("span"); tx.className = "t";
       tx.append(Object.assign(document.createElement("b"), { textContent: u.email, style: "direction:ltr;text-align:end" }),
-        Object.assign(document.createElement("span"), { textContent: [`נכנס ${when(u.last)}`, u.first ? `הצטרף ${new Date(u.first).toLocaleDateString("he-IL")}` : "", u.version ? `גרסה ${u.version}` : "", u.standalone ? "מותקן" : ""].filter(Boolean).join(" · ") }));
+        Object.assign(document.createElement("span"), { textContent: [`נכנס ${when(u.last)}`, u.first ? `הצטרף ${new Date(u.first).toLocaleDateString("he-IL")}` : "", u.version ? `גרסה ${u.version}` : "", u.standalone ? "מותקן" : "", u.devices > 1 ? `${u.devices} מכשירים` : ""].filter(Boolean).join(" · ") }));
       r.append(av, tx);
-      if (u.uid !== me.uid) {
+      if (!u.uids.includes(me.uid)) {
         const b = document.createElement("button"); b.type = "button"; b.className = "btn" + (u.blocked ? "" : " ghost"); b.textContent = u.blocked ? "ביטול חסימה" : "חסימה";
         b.onclick = async () => {
           b.disabled = true;
           try {
             const next = !u.blocked;
             const be = db.collection("blockedEmails").doc(u.email || "-");
-            await db.collection("users").doc(u.uid).set({ blocked: next }, { merge: true });
+            for (const id of u.uids) await db.collection("users").doc(id).set({ blocked: next }, { merge: true });
             if (u.email) await (next ? be.set({ at: Date.now() }) : be.delete());
             for (const o of users) if (o.email === u.email) o.blocked = next; toast(u.blocked ? `${u.email} נחסם/ה` : "החסימה בוטלה"); draw(); }
           catch { toast("השינוי לא נשמר"); b.disabled = false; }
@@ -3095,6 +3402,18 @@ async function renderAdmin() {
   };
   q.addEventListener("input", draw); draw();
   panel.append(stats, q, list);
+  if (errors.length) {
+    const eh = Object.assign(document.createElement("h4"), { className: "opt-h", textContent: `תקלות אחרונות אצל משתמשים (${errors.length})` });
+    const el = document.createElement("div"); el.className = "cmplist";
+    for (const e of errors) {
+      const r = document.createElement("div"); r.className = "adm-u";
+      const tx = document.createElement("span"); tx.className = "t";
+      tx.append(Object.assign(document.createElement("b"), { textContent: e.msg, style: "direction:ltr;text-align:end;font-size:.85rem" }),
+        Object.assign(document.createElement("span"), { textContent: [new Date(e.t).toLocaleString("he-IL"), e.email, e.where, `גרסה ${e.version}`].filter(Boolean).join(" · ") }));
+      r.append(tx); el.append(r);
+    }
+    panel.append(eh, el);
+  }
 }
 
 initAuth();
