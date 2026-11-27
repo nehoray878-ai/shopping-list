@@ -1,10 +1,16 @@
-# מפרסם את האפליקציה ב-GitHub Pages. המחירים מתעדכנים מהמחשב הביתי (רמי לוי חוסם את שרתי GitHub)
+# מפרסם את האפליקציה ב-GitHub Pages: הקוד מ-main והמחירים מהענף data.
+# המחירים מתעדכנים מהמחשב הביתי (scripts/update_and_publish.sh), כי חלק מהרשתות חוסמות את שרתי GitHub.
+# בענף data יש פעולה קטנה ("מחירים חדשים") שרצה בכל עדכון מחירים; כשהיא מסתיימת, הקובץ הזה מפרסם מחדש.
+# (GitHub מאפשר לפרסם רק מ-main, ולכן הפרסום עצמו תמיד רץ מכאן.)
 name: פרסום האפליקציה
 
 on:
   workflow_dispatch:
   push:
     branches: [main]
+  workflow_run:
+    workflows: ["מחירים חדשים"]
+    types: [completed]
 
 permissions:
   contents: read
@@ -20,6 +26,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/checkout@v4
+        with:
+          ref: data
+          path: app/data
+      - name: קטלוג ישן לטלפונים שעוד לא התעדכנו
+        run: |
+          rm -rf app/data/.git app/data/.github
+          if [ -f app/data/catalog.json ]; then mv app/data/catalog.json app/catalog.json; fi
+          du -sh app
       - uses: actions/upload-pages-artifact@v3
         with:
           path: app

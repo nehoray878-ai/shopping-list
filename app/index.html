@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* מצב בהיר/כהה לפני שהדף מצויר, כדי שלא יהבהב */(function(){var t="auto";try{t=JSON.parse(localStorage.getItem("theme"))||"auto"}catch(e){}var d=t==="dark"||(t==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.setAttribute("data-theme",d?"dark":"light")})();</script>
 <title>רשימת הקניות</title>
-<meta name="description" content="רשימת קניות עם המחירים והמבצעים של סניף רמי לוי">
+<meta name="description" content="רשימת קניות עם המחירים והמבצעים של הסניף שלך: רמי לוי, שופרסל, ויקטורי, יוחננוף, אושר עד וקרפור">
 <meta name="theme-color" content="#1E5A3C">
-<meta name="app-version" content="3.2">
+<meta name="app-version" content="4.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="קניות">
@@ -432,6 +432,24 @@ html.big .drow .thumb { width: 60px; height: 60px; }
 .switch::after { content: ""; position: absolute; top: 3px; inset-inline-start: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgb(0 0 0 / .2); transition: inset-inline-start .15s; }
 .mi[aria-checked="true"] .switch { background: var(--brand); }
 .mi[aria-checked="true"] .switch::after { inset-inline-start: 21px; }
+/* chain + branch picker */
+.chains { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+.chainbtn { border: 0; border-radius: var(--r-lg); background: var(--surface); color: var(--fg); padding: 16px 12px; min-height: 76px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 1.08rem; font-weight: 800; border-top: 6px solid var(--c, var(--brand)); }
+.chainbtn small { font-size: 0.8rem; font-weight: 500; color: var(--muted); }
+.chainbtn.on { outline: 3px solid var(--ink); outline-offset: -3px; }
+.brlist { background: var(--surface); border-radius: var(--r-lg); overflow: hidden; display: flex; flex-direction: column; }
+.bri { display: flex; align-items: center; gap: 12px; width: 100%; border: 0; border-top: 1px solid var(--line); background: transparent; padding: 12px 16px; min-height: 58px; text-align: start; color: var(--fg); }
+.bri:first-child { border-top: 0; }
+.bri > .ico { color: var(--muted); flex: none; }
+.bri.on > .ico { color: var(--brand); }
+.bri .t { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.bri .t b { font-weight: 700; font-size: 1rem; }
+.bri .t span { color: var(--muted); font-size: 0.84rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.brsearch { position: sticky; top: -6px; z-index: 1; background: var(--bg); padding: 4px 0; }
+.brsearch .field { width: 100%; }
+.welcome { background: var(--surface); border-radius: var(--r-lg); padding: 14px 16px; }
+.welcome b { display: block; font-size: 1.05rem; font-weight: 800; margin-bottom: 2px; }
+.welcome span { color: var(--muted); font-size: 0.9rem; }
 .about { display: flex; flex-direction: column; gap: 12px; }
 .about .card-a { background: var(--surface); border-radius: var(--r-lg); padding: 16px; display: flex; flex-direction: column; gap: 6px; }
 .about h3 { margin: 0; font-size: 1rem; font-weight: 800; }
@@ -687,6 +705,7 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
   </div>
   <div class="sheet-body">
     <div class="menu" id="sheetMenu">
+      <button class="mi" id="storeBtn" type="button"></button>
       <div class="mi themerow" role="group" aria-labelledby="themeLbl">
         <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
         <span class="lbl" id="themeLbl">מראה</span>
@@ -706,6 +725,7 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
       <button class="mi" id="backupBtn" type="button"></button>
       <button class="mi" id="aboutBtn" type="button"></button>
     </div>
+    <div class="spanel" id="storePanel" hidden></div>
     <div class="spanel" id="listPanel" hidden></div>
     <div class="spanel" id="orderPanel" hidden></div>
     <div class="spanel" id="sharePanel" hidden></div>
@@ -722,7 +742,7 @@ const $ = id => document.getElementById(id);
 const LS_KEY = "shopping-list-v2";
 const fmt = n => "₪" + n.toFixed(2);
 const APP_VERSION = document.querySelector('meta[name="app-version"]').content;   // לעדכן ב-<head> בכל גרסה
-const WHATS_NEW_ID = "2.0";   // לשנות רק כשיש כרטיס "מה חדש" חדש להציג
+const WHATS_NEW_ID = "4.0";   // לשנות רק כשיש כרטיס "מה חדש" חדש להציג
 
 /* ---------- icons (one stroke style everywhere, instead of emoji) ---------- */
 const ICON_PATHS = {
@@ -745,6 +765,7 @@ const ICON_PATHS = {
   rows: '<path d="M4 6h16M4 12h16M4 18h16"/>',
   repeat: '<path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  pin: '<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
   menu: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
   chat: '<path d="M21 12a9 9 0 0 1-13.5 7.8L3 21l1.2-4.5A9 9 0 1 1 21 12z"/>',
 };
@@ -1877,7 +1898,7 @@ function tripEditor(t) {
 }
 
 /* ---------- backup & restore ---------- */
-const BACKUP_KEYS = ["shopping-list-v2", "lists", "cur-list", "favs", "history", "dept-order", "big-text", "closed-groups", "budget", "cat-sort", "seen-deals", "compact-view", "sg-sort", "keep-awake", "recurring", "recur-dismissed", "theme"];
+const BACKUP_KEYS = ["shopping-list-v2", "lists", "cur-list", "favs", "history", "dept-order", "big-text", "closed-groups", "budget", "cat-sort", "seen-deals", "compact-view", "sg-sort", "keep-awake", "recurring", "recur-dismissed", "theme", "branch"];
 function backupPanel() {
   const panel = document.createElement("div"); panel.className = "panel";
   panel.innerHTML = "<h3>גיבוי ושחזור</h3><p>כל הנתונים (רשימות, קבועים והיסטוריה) שמורים רק בטלפון הזה. כדאי לשמור גיבוי מדי פעם: בקובץים, בדרייב או בהודעה לעצמכם בוואטסאפ.</p>";
@@ -2083,7 +2104,7 @@ $("dealsForm").addEventListener("submit", e => { e.preventDefault(); $("dealsInp
 $("dealsMore").onclick = () => { dealsShown += 40; renderDeals(); };
 
 /* ---------- settings sheet ---------- */
-const SHEET_PANELS = ["sheetMenu", "listPanel", "orderPanel", "sharePanel", "backupBox", "aboutBox", "recurPanel", "recurList"];
+const SHEET_PANELS = ["storePanel", "sheetMenu", "listPanel", "orderPanel", "sharePanel", "backupBox", "aboutBox", "recurPanel", "recurList"];
 function menuItem(btn, icon, label, end = ico("chev", "ico chev")) {
   btn.innerHTML = ico(icon) + `<span class="lbl"></span>` + end;
   btn.querySelector(".lbl").textContent = label;
@@ -2100,6 +2121,7 @@ function sheetShow(id, title) {
   for (const p of SHEET_PANELS) $(p).hidden = p !== id;
   $("sheetTitle").textContent = title;
   $("sheetBack").hidden = id === "sheetMenu";
+  $("sheetBack").onclick = openMenu; $("sheetX").hidden = false;
   const d = $("sheet"); if (!d.open) d.showModal();
   d.querySelector(".sheet-body").scrollTop = 0;
 }
@@ -2124,19 +2146,19 @@ function renderAbout() {
   brand.querySelector(".vsub").textContent = `גרסה ${APP_VERSION}`;
   const dl = document.createElement("dl");
   const row = (k, v) => dl.append(Object.assign(document.createElement("dt"), { textContent: k }), Object.assign(document.createElement("dd"), { textContent: v }));
-  if (catalog.branch) row("סניף", `רמי לוי ${catalog.branch.name} · ${catalog.branch.id}`);
+  if (catalog.branch) row("סניף", `${catalog.branch.chainName} ${catalog.branch.name} · ${catalog.branch.id}`);
   if (catalog.branch) row("מחירון הסניף", catalog.branch.at);
   if (catalog.updated) row("עדכון אחרון", catalog.updated);
   if (loaded) row("מוצרים במאגר", catalog.products.length.toLocaleString("he-IL"));
   box.append(
     card("", brand, dl),
     card("מאיפה המחירים?",
-      P("המחירים והמבצעים נלקחים מהמחירון הרשמי שהרשת מפרסמת לפי חוק שקיפות המחירים, ומתעדכנים פעמיים ביום. שמות ותמונות המוצרים נלקחים מאתר הרשת."),
+      P("המחירים והמבצעים נלקחים מהמחירון הרשמי שכל רשת מפרסמת לכל סניף לפי חוק שקיפות המחירים, ומתעדכנים פעמיים ביום. שמות ותמונות המוצרים נלקחים מאתר רמי לוי אונליין לפי הברקוד, ולכן לחלק מהמוצרים ברשתות אחרות אין תמונה."),
       P("מבצעי מועדון לקוחות וקופונים לא כלולים. המחיר בקופה עשוי להיות שונה, והסכום ברשימה הוא הערכה בלבד.")),
     card("פרטיות",
       P("הרשימות, הקבועים, התקציב וההיסטוריה נשמרים רק בטלפון הזה. אין הרשמה, אין מעקב ואין פרסומות." + (FIREBASE_CONFIG ? " רשימה משותפת נשמרת גם בענן, רק אצל מי שקיבל את הקוד." : "")),
       P("כדי לא לאבד נתונים כשמחליפים טלפון, כדאי לשמור גיבוי מדי פעם (בתפריט ההגדרות).")),
-    card("", P("האפליקציה פרטית ואינה קשורה לרשת רמי לוי.")),
+    card("", P("האפליקציה פרטית ואינה קשורה לאף רשת שיווק.")),
   );
 }
 
@@ -2184,7 +2206,7 @@ function listText() {
   const groups = new Map();
   for (const it of open) { const d = deptOf(it); if (!groups.has(d)) groups.set(d, []); groups.get(d).push(it); }
   const coll = new Intl.Collator("he");
-  const lines = [`🛒 ${lists.length > 1 ? curName() : "רשימת קניות"}${catalog.branch ? " – רמי לוי " + catalog.branch.name : ""}`];
+  const lines = [`🛒 ${lists.length > 1 ? curName() : "רשימת קניות"}${catalog.branch ? ` – ${catalog.branch.chainName} ${catalog.branch.name}` : ""}`];
   for (const [d, its] of [...groups.entries()].sort((a, b) => rank(a[0]) - rank(b[0]))) {
     lines.push("", `*${d}*`);
     its.sort((a, b) => coll.compare(a.name, b.name)).forEach(i => lines.push(`• ${i.name}${qtySuffix(i.qty, product(i))}`));
@@ -2433,12 +2455,11 @@ function renderWhatsNew() {
   const veteran = read(LS_KEY) != null || read("history") != null || read("favs") != null;
   if (!veteran) { store("whats-new", WHATS_NEW_ID); return; }
   const box = $("whatsNew");
-  box.innerHTML = `<div class="wn-hd"><span class="wn-badge">חדש</span><h2 id="wnTitle">האפליקציה קיבלה עיצוב חדש</h2></div>
+  box.innerHTML = `<div class="wn-hd"><span class="wn-badge">חדש</span><h2 id="wnTitle">עכשיו אפשר לבחור רשת וסניף</h2></div>
     <ul>
-      <li>כל מוצר מוצג בשורה עם תמונה ומחיר, מסודר לפי המחלקות בסניף. מוצר שסימנתם הופך לירוק ועובר לעגלה.</li>
-      <li>ההגדרות, סדר המחלקות, הטקסט הגדול והגיבוי נמצאים בכפתור ${ico("menu")} שלמעלה.</li>
-      <li>שליחת הרשימה בוואטסאפ: בכפתור ${ico("chat")} שלידו.</li>
-      <li>הרשימות, הקבועים וההיסטוריה שלכם נשארו בדיוק כמו שהיו.</li>
+      <li>רמי לוי, שופרסל, ויקטורי, יוחננוף, אושר עד וקרפור – כמעט 700 סניפים, עם המחירים והמבצעים של כל סניף.</li>
+      <li>אצלכם לא השתנה כלום: נשארתם ברמי לוי עפולה.</li>
+      <li>להחלפת רשת או סניף: בכפתור ${ico("menu")} שלמעלה, בשורה הראשונה. הרשימה נשארת כמו שהיא.</li>
     </ul>
     <div class="acts"><button class="btn" type="button" data-a="ok">הבנתי, תודה</button></div>`;
   const done = () => { store("whats-new", WHATS_NEW_ID); box.hidden = true; };
@@ -2458,28 +2479,178 @@ function loadError(box) {
 function applyCatalog(d) {
   d.products.forEach(p => p._s = norm(p.n + " " + p.b));
   catalog = d; byId = new Map(d.products.map(p => [p.id, p])); groupIdx = null; loaded = true; loadFailed = false;
-  if (d.branch) {
-    $("sub").textContent = `רמי לוי ${d.branch.name} · מחירי הסניף מ-${d.branch.at}`;
-    $("note").textContent = `${d.products.length.toLocaleString("he-IL")} מוצרים · מחירים ומבצעים מהמחירון הרשמי של סניף ${d.branch.name}. מבצעי מועדון לא כלולים.`;
-  } else {
-    $("sub").textContent = `רמי לוי · מחירים מעודכנים ל-${d.updated}`;
-    $("note").textContent = `${d.products.length.toLocaleString("he-IL")} מוצרים במאגר · המחירים מאתר הרשת ועשויים להיות שונים מעט מהמחיר בסניף`;
-  }
-  renderDepts(); renderAll(); runRecurring();
+  const br = d.branch;
+  $("sub").textContent = `${br.chainName} ${br.name} · מחירי הסניף מ-${br.at}`;
+  $("note").textContent = `${d.products.length.toLocaleString("he-IL")} מוצרים · מחירים ומבצעים מהמחירון הרשמי של ${br.chainName} ${br.name}. מבצעי מועדון לא כלולים.`;
+  renderStoreBtn(); renderDepts(); renderAll(); runRecurring();
 }
+
+/* ---------- chain + branch: every person picks their own (saved on the phone) ---------- */
+// {chain, id, name, chainName}. מי שהשתמש באפליקציה לפני שהיו רשתות – נשאר ברמי לוי עפולה
+const LEGACY_BRANCH = { chain: "ramilevy", id: "11", name: "עפולה", chainName: "רמי לוי" };
+let branch = loadJSON("branch", null);
+if (!branch && (read(LS_KEY) != null || read("history") != null || read("favs") != null)) { branch = LEGACY_BRANCH; saveJSON("branch", branch); }
+let storesIdx = null, loadSeq = 0;
+const getJSON = url => fetch(url).then(r => { if (!r.ok) throw new Error(url + " " + r.status); return r.json(); });
+const loadStores = () => storesIdx ? Promise.resolve(storesIdx) : getJSON("data/stores.json").then(d => storesIdx = d);
+
+// מחבר את שלושת הקבצים: שמות ותמונות (משותף) + המחיר הנפוץ ברשת + מה ששונה בסניף
+function buildCatalog(base, chain, br, sel) {
+  const price = new Map();
+  chain.codes.forEach((c, i) => price.set(c, chain.price[i]));
+  for (const i of br.miss) price.delete(chain.codes[i]);
+  for (const [c, p] of Object.entries(br.p)) price.set(c, p);
+  // מבצעים: כל מבצע נשמר פעם אחת ב-pl, והמוצרים מצביעים עליו (‎-1 = אין מבצע בסניף הזה)
+  const promo = c => c in br.pr ? (br.pl[br.pr[c]] || null) : (c in chain.pr ? chain.pl[chain.pr[c]] : null);
+  const ch = br.ch || {};
+  const decorate = (x, c) => {
+    const u = chain.u[c];
+    if (u && !x.o) { x.u = Math.round(x.p * u[0] * 100) / 100; x.uu = chain.units[u[1]]; }
+    const pr = promo(c); if (pr) x.pr = pr;
+    if (ch[c] && !x.o) { x.pp = ch[c][0]; x.pc = ch[c][1]; }
+    return x;
+  };
+  const products = [], seen = new Set();
+  for (const b of base.products) {
+    const c = b.b || String(b.id);
+    let p = price.get(c), o = 0;
+    if (p == null) { if (sel.chain !== "ramilevy") continue; p = b.p; o = 1; }   // רק ברמי לוי יש מחיר מהאתר
+    const x = { ...b, p }; if (o) x.o = 1;
+    products.push(decorate(x, c)); seen.add(c);
+  }
+  const extra = [];
+  for (const [c, p] of price) {
+    if (seen.has(c)) continue;
+    const nm = chain.names[c]; if (!nm) continue;
+    const id = sel.chain === "ramilevy" || c.length >= 8 ? "s" + c : `s${sel.chain}:${c}`;   // קוד קצר = קוד פנימי של הרשת
+    extra.push(decorate({ id, b: c, n: nm[0], p, d: "", i: "", k: nm[1] }, c));
+  }
+  const coll = new Intl.Collator("he");
+  extra.sort((a, b) => coll.compare(a.n, b.n));
+  return { products: products.concat(extra), imgBase: base.imgBase, updated: chain.at,
+    branch: { ...sel, at: br.at, chainName: sel.chainName } };
+}
+
 function loadCatalog() {
+  if (!branch) { renderAll(); openStorePicker(true); return Promise.resolve(); }
+  const sel = branch, seq = ++loadSeq;
   loadFailed = false; renderAll();
-  return fetch("catalog.json").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); }).then(applyCatalog).catch(err => {
-    console.warn("catalog load failed", err);
-    loadFailed = true;
-    $("sub").textContent = "רמי לוי · אין חיבור למאגר המחירים כרגע";
-    renderAll();
-    if (view === "list" && items.some(i => i.pid != null)) toast("המחירים לא נטענו. בדקו את החיבור.", "לנסות שוב", loadCatalog);
+  return Promise.all([getJSON("data/base.json"), getJSON(`data/chains/${sel.chain}.json`), getJSON(`data/branches/${sel.chain}/${sel.id}.json`)])
+    .then(([base, chain, br]) => buildCatalog(base, chain, br, sel))
+    .catch(err => {
+      // גיבוי: הקובץ הישן של רמי לוי עפולה
+      if (sel.chain !== LEGACY_BRANCH.chain || sel.id !== LEGACY_BRANCH.id) throw err;
+      return getJSON("catalog.json").then(d => ({ ...d, branch: { ...sel, at: d.branch ? d.branch.at : d.updated } }));
+    })
+    .then(d => { if (seq === loadSeq) applyCatalog(d); })
+    .catch(err => {
+      if (seq !== loadSeq) return;
+      console.warn("catalog load failed", err);
+      loadFailed = true;
+      $("sub").textContent = `${sel.chainName} ${sel.name} · אין חיבור למאגר המחירים כרגע`;
+      renderAll();
+      if (view === "list" && items.some(i => i.pid != null)) toast("המחירים לא נטענו. בדקו את החיבור.", "לנסות שוב", loadCatalog);
+    });
+}
+
+function renderStoreBtn() {
+  menuItem($("storeBtn"), "pin", branch ? `${branch.chainName} ${branch.name}` : "בחירת רשת וסניף",
+    `<span class="vsub" style="color:var(--muted);font-size:.85rem">החלפה</span>` + ico("chev", "ico chev"));
+}
+renderStoreBtn();
+$("storeBtn").onclick = () => openStorePicker(false);
+
+let pickerFirst = false;
+function openStorePicker(first) {
+  pickerFirst = first;
+  sheetShow("storePanel", first ? "באיזה סופר קונים?" : "רשת וסניף");
+  $("sheetX").hidden = first;
+  if (first) $("sheetBack").hidden = true;
+  const panel = $("storePanel"); panel.textContent = "";
+  const wait = Object.assign(document.createElement("p"), { textContent: "טוען את רשימת הסניפים…" });
+  panel.append(wait);
+  loadStores().then(() => renderChains()).catch(() => {
+    wait.textContent = "אין חיבור לאינטרנט. נסו שוב בעוד רגע.";
+    const b = document.createElement("button"); b.type = "button"; b.className = "btn"; b.textContent = "לנסות שוב"; b.onclick = () => openStorePicker(first);
+    panel.append(b);
   });
 }
+function renderChains() {
+  const panel = $("storePanel"); panel.textContent = "";
+  if (pickerFirst) {
+    const w = document.createElement("div"); w.className = "welcome";
+    w.innerHTML = "<b>ברוכים הבאים!</b><span>בחרו את הרשת והסניף שבו אתם קונים, והמחירים והמבצעים יהיו של הסניף הזה. אפשר להחליף בכל רגע בהגדרות.</span>";
+    panel.append(w);
+  }
+  const grid = document.createElement("div"); grid.className = "chains";
+  for (const c of storesIdx.chains) {
+    const n = (storesIdx.stores[c.key] || []).length; if (!n) continue;
+    const b = document.createElement("button"); b.type = "button"; b.className = "chainbtn" + (branch && branch.chain === c.key ? " on" : "");
+    b.style.setProperty("--c", c.color);
+    b.append(document.createTextNode(c.name), Object.assign(document.createElement("small"), { textContent: `${n} סניפים` }));
+    b.onclick = () => renderBranches(c);
+    grid.append(b);
+  }
+  panel.append(grid);
+  $("sheetTitle").textContent = pickerFirst ? "באיזה סופר קונים?" : "בחירת רשת";
+  $("sheetBack").hidden = pickerFirst;
+  $("sheetBack").onclick = openMenu;
+}
+function renderBranches(c) {
+  const panel = $("storePanel"); panel.textContent = "";
+  $("sheetTitle").textContent = `סניפי ${c.name}`;
+  $("sheetBack").hidden = false;
+  $("sheetBack").onclick = () => renderChains();
+  const sw = document.createElement("div"); sw.className = "brsearch";
+  const q = document.createElement("input"); q.className = "field"; q.type = "search"; q.placeholder = "חיפוש לפי עיר או שם הסניף"; q.setAttribute("aria-label", "חיפוש סניף"); q.autocomplete = "off";
+  sw.append(q);
+  const list = document.createElement("div"); list.className = "brlist";
+  const rows = storesIdx.stores[c.key] || [];
+  const draw = () => {
+    const t = norm(q.value.trim());
+    list.textContent = "";
+    const hits = rows.filter(r => !t || norm(r.join(" ")).includes(t));
+    for (const [id, name, city, addr] of hits) {
+      const on = branch && branch.chain === c.key && branch.id === id;
+      const b = document.createElement("button"); b.type = "button"; b.className = "bri" + (on ? " on" : "");
+      b.innerHTML = ico(on ? "check" : "pin") + '<span class="t"><b></b><span></span></span>';
+      b.querySelector("b").textContent = name;
+      b.querySelector(".t span").textContent = [city && !name.includes(city) ? city : "", addr].filter(Boolean).join(" · ") || " ";
+      b.onclick = () => chooseBranch(c, id, name);
+      list.append(b);
+    }
+    if (!hits.length) list.append(Object.assign(document.createElement("p"), { textContent: "לא נמצא סניף. נסו לחפש בשם העיר.", style: "margin:14px 16px;color:var(--muted)" }));
+  };
+  q.addEventListener("input", draw);
+  draw();
+  panel.append(sw, list);
+  $("sheet").querySelector(".sheet-body").scrollTop = 0;
+}
+function chooseBranch(c, id, name) {
+  const prev = branch;
+  branch = { chain: c.key, id, name, chainName: c.name };
+  saveJSON("branch", branch);
+  $("sheetBack").onclick = openMenu; $("sheetX").hidden = false; pickerFirst = false;
+  closeSheet(); renderStoreBtn();
+  if (!prev || prev.chain !== branch.chain || prev.id !== branch.id) {
+    loaded = false; catalog = { products: [], imgBase: "", updated: "" }; byId = new Map(); groupIdx = null;
+    loadCatalog().then(() => {
+      if (!loaded) return;
+      const lost = mineAll().filter(i => !i.done && i.pid != null && !byId.has(i.pid)).length;
+      toast(`עברתם ל${c.name} ${name}` + (lost ? ` · ${lost} מוצרים ברשימה לא נמכרים בסניף הזה` : ""));
+    });
+  }
+}
+// בהצגה ראשונה אי אפשר לסגור בלי לבחור סניף
+$("sheet").addEventListener("cancel", e => { if (pickerFirst) e.preventDefault(); });
+$("sheet").addEventListener("click", e => { if (pickerFirst && e.target === e.currentTarget) e.stopImmediatePropagation(); }, true);
+
 // המחירים נפתחים מיד מהזיכרון; כשמגיעים מחירים חדשים ברקע, מעדכנים בשקט
+let refreshTimer;
 if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", e => {
-  if (e.data && e.data.type === "catalog-updated") fetch("catalog.json").then(r => r.json()).then(d => { applyCatalog(d); toast("המחירים עודכנו"); }).catch(() => {});
+  if (!(e.data && e.data.type === "catalog-updated") || !loaded) return;
+  clearTimeout(refreshTimer);   // כמה קבצים מתעדכנים יחד – טוענים פעם אחת
+  refreshTimer = setTimeout(() => { storesIdx = null; loadCatalog().then(() => { if (loaded) toast("המחירים עודכנו"); }); }, 1500);
 });
 showView("list");
 loadCatalog();
