@@ -2799,14 +2799,19 @@ function priceAgeDays(at) {
   if (t - now > 864e5 * 30) t = new Date(now.getFullYear() - 1, +m[2] - 1, +m[1]);   // דצמבר שנצפה בינואר
   return Math.max(0, Math.floor((now - t) / 864e5));
 }
+// שורת הסניף בכותרת. אזהרת "המחירים לא עודכנו" – רק למנהל (משתמשים רגילים לא רואים אותה)
+function renderSub() {
+  if (!catalog.branch) return;
+  const br = catalog.branch;
+  $("sub").textContent = `${br.chainName} ${br.name} · מחירי הסניף מ-${br.at}`;
+  const age = priceAgeDays(catalog.updated);
+  if (age >= 2 && typeof isAdmin === "function" && isAdmin()) $("sub").textContent += ` · ⚠️ המחירים לא עודכנו ${age} ימים`;
+}
 function applyCatalog(d) {
   d.products.forEach(p => p._s = norm(p.n + " " + p.b));
   catalog = d; byId = new Map(d.products.map(p => [p.id, p])); groupIdx = null; loaded = true; loadFailed = false;
+  renderSub();
   const br = d.branch;
-  $("sub").textContent = `${br.chainName} ${br.name} · מחירי הסניף מ-${br.at}`;
-  // המחירים מתעדכנים פעמיים ביום. אם העדכון נתקע – אומרים למשתמש, כדי שלא יסמוך על מחיר ישן
-  const age = priceAgeDays(d.updated);
-  if (age >= 2) $("sub").textContent += ` · ⚠️ המחירים לא עודכנו ${age} ימים`;
   $("note").textContent = `${d.products.length.toLocaleString("he-IL")} מוצרים · מחירים ומבצעים מהמחירון הרשמי של ${br.chainName} ${br.name}. מבצעי מועדון לא כלולים.`;
   renderStoreBtn(); renderDepts(); renderAll(); runRecurring();
 }
@@ -3244,6 +3249,7 @@ async function onUser(u) {
   if (!email) { showGate(); return; }            // חשבון אורח בלי מייל: מבקשים את המייל
   store("auth-uid", u.uid);
   $("adminBtn").hidden = !isAdmin();
+  renderSub();
   $("accountBtn").hidden = false;
   menuItem($("accountBtn"), "info", `מחובר/ת: ${email}`, '<span class="vsub" style="color:var(--muted);font-size:.85rem">יציאה</span>');
   startApp();
