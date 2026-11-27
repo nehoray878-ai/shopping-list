@@ -3,10 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script>/* מצב בהיר/כהה לפני שהדף מצויר, כדי שלא יהבהב */(function(){var t="auto";try{t=JSON.parse(localStorage.getItem("theme"))||"auto"}catch(e){}var d=t==="dark"||(t==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.setAttribute("data-theme",d?"dark":"light")})();</script>
 <title>רשימת הקניות</title>
 <meta name="description" content="רשימת קניות עם המחירים והמבצעים של סניף רמי לוי">
 <meta name="theme-color" content="#1E5A3C">
-<meta name="app-version" content="3.1">
+<meta name="app-version" content="3.2">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="קניות">
@@ -34,16 +35,15 @@
   --r-lg: 20px; --r-md: 14px; --r-sm: 10px;
   color-scheme: light;
 }
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #11130F; --surface: #1B1E19; --sunk: #23271F; --line: #2E3229;
-    --fg: #F3EFE6; --muted: #B3AD9F;
-    --promo-bg: #3A3216; --promo-fg: #FFE58A;
-    --ink: #F3EFE6; --on-ink: #11130F; --ink-accent: #1E5A3C;
-    --danger: #FF8A7A; --down: #7FD9A4;
-    --done-bg: #1F3A27; --done-fg: #A8E6BC;
-    color-scheme: dark;
-  }
+/* מצב כהה: html[data-theme="dark"] נקבע לפני שהדף מצויר (לפי ההגדרה באפליקציה, או לפי הטלפון ב"אוטומטי") */
+:root[data-theme="dark"] {
+  --bg: #11130F; --surface: #1B1E19; --sunk: #23271F; --line: #2E3229;
+  --fg: #F3EFE6; --muted: #B3AD9F;
+  --promo-bg: #3A3216; --promo-fg: #FFE58A;
+  --ink: #F3EFE6; --on-ink: #11130F; --ink-accent: #1E5A3C;
+  --danger: #FF8A7A; --down: #7FD9A4;
+  --done-bg: #1F3A27; --done-fg: #A8E6BC;
+  color-scheme: dark;
 }
 
 /* ===== base ===== */
@@ -278,7 +278,12 @@ ul.items { list-style: none; margin: 0; padding: 0; display: grid; grid-template
 .arow .tx span.down { color: var(--down); }
 .arow .plus { color: var(--brand); font-weight: 800; font-size: 1.3rem; flex: none; }
 .alerts .more { border: 0; background: transparent; color: var(--promo-fg); font: inherit; font-weight: 700; font-size: 0.9rem; align-self: flex-start; padding: 4px 2px; }
-@media (prefers-color-scheme: dark) { .arow .tx span { color: #FFB86B; } .tabbar { box-shadow: 0 -1px 0 #2E3229; } }
+:root[data-theme="dark"] .arow .tx span { color: #FFB86B; }
+:root[data-theme="dark"] .tabbar { box-shadow: 0 -1px 0 #2E3229; }
+.themerow { cursor: default; }
+.seg { display: flex; background: var(--sunk); border-radius: 12px; padding: 3px; gap: 2px; flex: none; }
+.seg button { border: 0; background: transparent; border-radius: 9px; padding: 8px 11px; min-height: 36px; font-size: 0.85rem; font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--fg); font-weight: 800; box-shadow: 0 1px 3px rgb(0 0 0 / .15); }
 
 /* ===== catalog + deals ===== */
 .depts { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding-block: 10px 2px; }
@@ -682,6 +687,15 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
   </div>
   <div class="sheet-body">
     <div class="menu" id="sheetMenu">
+      <div class="mi themerow" role="group" aria-labelledby="themeLbl">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg>
+        <span class="lbl" id="themeLbl">מראה</span>
+        <div class="seg" id="themeSeg">
+          <button type="button" data-t="light" aria-pressed="false">בהיר</button>
+          <button type="button" data-t="dark" aria-pressed="false">כהה</button>
+          <button type="button" data-t="auto" aria-pressed="false">אוטומטי</button>
+        </div>
+      </div>
       <button class="mi" id="miShare" type="button" hidden></button>
       <button class="mi" id="listEdit" type="button"></button>
       <button class="mi" id="orderBtn" type="button"></button>
@@ -1863,7 +1877,7 @@ function tripEditor(t) {
 }
 
 /* ---------- backup & restore ---------- */
-const BACKUP_KEYS = ["shopping-list-v2", "lists", "cur-list", "favs", "history", "dept-order", "big-text", "closed-groups", "budget", "cat-sort", "seen-deals", "compact-view", "sg-sort", "keep-awake", "recurring", "recur-dismissed"];
+const BACKUP_KEYS = ["shopping-list-v2", "lists", "cur-list", "favs", "history", "dept-order", "big-text", "closed-groups", "budget", "cat-sort", "seen-deals", "compact-view", "sg-sort", "keep-awake", "recurring", "recur-dismissed", "theme"];
 function backupPanel() {
   const panel = document.createElement("div"); panel.className = "panel";
   panel.innerHTML = "<h3>גיבוי ושחזור</h3><p>כל הנתונים (רשימות, קבועים והיסטוריה) שמורים רק בטלפון הזה. כדאי לשמור גיבוי מדי פעם: בקובץים, בדרייב או בהודעה לעצמכם בוואטסאפ.</p>";
@@ -2129,6 +2143,17 @@ function renderAbout() {
 /* ---------- big text ---------- */
 function applyBig(on) { document.documentElement.classList.toggle("big", on); $("bigBtn").setAttribute("aria-checked", on ? "true" : "false"); }
 applyBig(loadJSON("big-text", false));
+/* ---------- appearance: light / dark / automatic (follows the phone) ---------- */
+let themeChoice = loadJSON("theme", "auto");
+const darkMQ = matchMedia("(prefers-color-scheme: dark)");
+function applyTheme() {
+  const dark = themeChoice === "dark" || (themeChoice === "auto" && darkMQ.matches);
+  document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  $("themeSeg").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.t === themeChoice ? "true" : "false"));
+}
+darkMQ.addEventListener("change", applyTheme);
+$("themeSeg").querySelectorAll("button").forEach(b => b.onclick = () => { themeChoice = b.dataset.t; saveJSON("theme", themeChoice); applyTheme(); });
+applyTheme();
 function applyCompact(on) { document.documentElement.classList.toggle("compact", on); $("compactBtn").setAttribute("aria-checked", on ? "true" : "false"); }
 applyCompact(loadJSON("compact-view", true));   // ברירת מחדל: שורה לכל מוצר
 $("compactBtn").onclick = () => { const on = !document.documentElement.classList.contains("compact"); saveJSON("compact-view", on); applyCompact(on); };
