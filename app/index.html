@@ -6,7 +6,7 @@
 <title>רשימת הקניות</title>
 <meta name="description" content="רשימת קניות עם המחירים והמבצעים של סניף רמי לוי">
 <meta name="theme-color" content="#1E5A3C">
-<meta name="app-version" content="2.4">
+<meta name="app-version" content="2.5">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="קניות">
@@ -995,7 +995,8 @@ function renderList() {
   renderListPicker();
   const all = mineAll();
   const open = all.filter(i => !i.done);
-  const done = all.filter(i => i.done).sort((a, b) => b.doneAt - a.doneAt);
+  // גם העגלה מסודרת לפי סדר המחלקות בסניף ואז לפי שם, כמו הרשימה
+  const done = all.filter(i => i.done).sort((a, b) => rank(deptOf(a)) - rank(deptOf(b)) || a.name.localeCompare(b.name, "he"));
   listBase = all.reduce((s, i) => { const p = product(i); return s + (p ? p.p * i.qty : 0); }, 0);
   const total = all.reduce((s, i) => { const p = product(i); return s + lineCost(p, i.qty); }, 0);
   const left = open.reduce((s, i) => { const p = product(i); return s + lineCost(p, i.qty); }, 0);
@@ -1687,7 +1688,7 @@ function renderAbout() {
 function applyBig(on) { document.documentElement.classList.toggle("big", on); $("bigBtn").setAttribute("aria-checked", on ? "true" : "false"); }
 applyBig(loadJSON("big-text", false));
 function applyCompact(on) { document.documentElement.classList.toggle("compact", on); $("compactBtn").setAttribute("aria-checked", on ? "true" : "false"); }
-applyCompact(loadJSON("compact-view", false));
+applyCompact(loadJSON("compact-view", true));   // ברירת מחדל: שורה לכל מוצר
 $("compactBtn").onclick = () => { const on = !document.documentElement.classList.contains("compact"); saveJSON("compact-view", on); applyCompact(on); };
 $("bigBtn").onclick = () => { const on = !document.documentElement.classList.contains("big"); saveJSON("big-text", on); applyBig(on); };
 
@@ -1948,15 +1949,14 @@ function renderWhatsNew() {
   const box = $("whatsNew");
   box.innerHTML = `<div class="wn-hd"><span class="wn-badge">חדש</span><h2 id="wnTitle">האפליקציה קיבלה עיצוב חדש</h2></div>
     <ul>
-      <li>כל מוצר מוצג עכשיו ככרטיס עם תמונה ומחיר. מעדיפים שורות קטנות? יש תצוגה צפופה.</li>
+      <li>כל מוצר מוצג בשורה עם תמונה ומחיר, מסודר לפי המחלקות בסניף. מוצר שסימנתם הופך לירוק ועובר לעגלה.</li>
       <li>ההגדרות, סדר המחלקות, הטקסט הגדול והגיבוי נמצאים בכפתור ${ico("menu")} שלמעלה.</li>
       <li>שליחת הרשימה בוואטסאפ: בכפתור ${ico("chat")} שלידו.</li>
       <li>הרשימות, הקבועים וההיסטוריה שלכם נשארו בדיוק כמו שהיו.</li>
     </ul>
-    <div class="acts"><button class="btn" type="button" data-a="ok">הבנתי, תודה</button><button class="btn ghost" type="button" data-a="compact">לעבור לתצוגה צפופה</button></div>`;
+    <div class="acts"><button class="btn" type="button" data-a="ok">הבנתי, תודה</button></div>`;
   const done = () => { store("whats-new", WHATS_NEW_ID); box.hidden = true; };
   box.querySelector('[data-a="ok"]').onclick = done;
-  box.querySelector('[data-a="compact"]').onclick = () => { saveJSON("compact-view", true); applyCompact(true); done(); toast("עברנו לתצוגה צפופה. אפשר לשנות בהגדרות."); };
   box.hidden = false;
 }
 renderWhatsNew();
