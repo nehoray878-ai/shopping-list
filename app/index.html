@@ -6,7 +6,7 @@
 <title>רשימת הקניות</title>
 <meta name="description" content="רשימת קניות עם המחירים והמבצעים של סניף רמי לוי">
 <meta name="theme-color" content="#1E5A3C">
-<meta name="app-version" content="2.3">
+<meta name="app-version" content="2.4">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="קניות">
@@ -147,6 +147,10 @@ img { max-width: 100%; }
 .sg .col { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
 .sg .pr { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .sg.free .nm { color: var(--brand); font-weight: 700; }
+.sg .u { font-size: 0.78rem; color: var(--down); font-weight: 700; font-variant-numeric: tabular-nums; }
+.sgsort { position: sticky; top: 0; z-index: 1; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 8px 10px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.sgsort::-webkit-scrollbar { display: none; }
+.sgsort .dchip { min-height: 36px; padding: 6px 11px; font-size: 0.84rem; }
 .sg .thumb { width: 44px; height: 44px; border-radius: 10px; }
 
 /* ===== thumbnails ===== */
@@ -431,6 +435,20 @@ html.compact .it .alt { grid-area: alt; flex-direction: row; align-items: center
 html.compact .alt .t { flex: 1; min-width: 0; }
 html.compact .alt .sw { flex: none; }
 html.big.compact .it .thumb { width: 60px; height: 60px; aspect-ratio: auto; }
+
+/* ===== items already in the cart: always a slim row ===== */
+ul.items.cartlist { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+.cartlist .it { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "pic body foot"; column-gap: 10px; align-items: center; padding: 6px 12px 6px 6px; border-radius: 14px; }
+.cartlist .it .pic { grid-area: pic; display: flex; align-items: center; gap: 2px; }
+.cartlist .it .thumb { width: 40px; height: 40px; aspect-ratio: auto; padding: 2px; border-radius: 10px; }
+.cartlist .it .thumb.ph { font-size: 1rem; padding: 0; }
+.cartlist .chk { position: static; order: -1; width: 40px; height: 44px; }
+.cartlist .chk span { width: 26px; height: 26px; }
+.cartlist .it .body { grid-area: body; }
+.cartlist .it .nm { font-size: 0.92rem; }
+.cartlist .it .meta, .cartlist .it .incart { display: none; }
+.cartlist .it .foot { grid-area: foot; margin-top: 0; }
+.cartlist .price b { font-size: 0.98rem; }
 
 /* ===== what's new (one-time card) ===== */
 .whatsnew { background: var(--lime); color: #171717; border-radius: var(--r-lg); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
@@ -748,7 +766,7 @@ function placeholder(name) {
   const [bg, fg] = PH_TINTS[h % PH_TINTS.length];
   const el = document.createElement("span"); el.className = "thumb ph"; el.setAttribute("aria-hidden", "true");
   el.style.setProperty("--ph-bg", bg); el.style.setProperty("--ph-fg", fg);
-  el.textContent = n.charAt(0) || "?";
+  el.textContent = n.charAt(0) || (name || "").charAt(0) || "?";
   return el;
 }
 function thumb(p, name) {
@@ -1045,25 +1063,53 @@ function renderList() {
       confirmClear = false; const n = done.length; saveTrip(done); items = items.filter(i => !(i.done && listOf(i) === currentList)); save(); renderAll(); toast(`הקנייה נשמרה בהיסטוריה (${n} פריטים)`);
     };
     head.append(h, b);
-    const ul = document.createElement("ul"); ul.className = "items"; done.forEach(i => ul.append(row(i)));
+    const ul = document.createElement("ul"); ul.className = "items cartlist"; done.forEach(i => ul.append(row(i)));
     s.append(head, ul); list.append(s);
   }
 }
 
 /* ---------- add bar with suggestions ---------- */
 let sgIndex = -1, sgItems = [];
+let sgSort = loadJSON("sg-sort", "");
+const SG_SORTS = [["", "הכי מתאים"], ["asc", "הכי זול"], ["desc", "הכי יקר"], ["unit", "משתלם לכמות"]];
+/* למיון לפי מחיר: רק מוצרים מאותו סוג שמחפשים ("חלב" → חלב, לא "סחלב" או "שוקולד חלב") */
+function sortedMatches(q, mode) {
+  const rel = search(q, "");
+  if (!rel.length) return [];
+  const toks = norm(q).split(" ").filter(Boolean);
+  const words = rel.filter(p => toks.every(t => (" " + p._s).includes(" " + t)));   // המילה מתחילה כך
+  const base = words.length ? words : rel;
+  const groups = new Set(base.slice(0, 5).map(p => p.g).filter(Boolean));          // הקטגוריות של התוצאות הכי מתאימות
+  const same = base.filter(p => groups.has(p.g));
+  return sortRes(same.length >= 3 ? same : base, mode);
+}
 function renderSuggest() {
   const q = $("addInput").value; const box = $("suggest");
   $("addClear").hidden = !q;
   if (!q.trim()) { box.hidden = true; return; }
-  sgItems = catalog.products.length ? search(q, "", 7) : [];
+  // ממוינים: מחפשים בכל המוצרים שמתאימים ואז ממיינים, כדי שהזול/המשתלם באמת יופיע ראשון
+  sgItems = catalog.products.length ? (sgSort ? sortedMatches(q, sgSort).slice(0, 12) : search(q, "", 7)) : [];
   box.textContent = "";
+  if (catalog.products.length) {
+    const bar = document.createElement("div"); bar.className = "sgsort"; bar.setAttribute("role", "group"); bar.setAttribute("aria-label", "מיון התוצאות");
+    for (const [val, label] of SG_SORTS) {
+      const c = document.createElement("button"); c.type = "button"; c.className = "dchip" + (sgSort === val ? " on" : ""); c.textContent = label;
+      c.setAttribute("aria-pressed", sgSort === val ? "true" : "false");
+      c.onmousedown = e => e.preventDefault();
+      c.onclick = () => { sgSort = val; saveJSON("sg-sort", val); sgIndex = -1; renderSuggest(); box.scrollTop = 0; };
+      bar.append(c);
+    }
+    box.append(bar);
+  }
   sgItems.forEach((p, i) => {
     const b = document.createElement("button"); b.type = "button"; b.className = "sg" + (i === sgIndex ? " on" : "");
-    const nm = document.createElement("span"); nm.className = "nm"; nm.textContent = p.n;
-    const pr = document.createElement("span"); pr.className = "pr"; pr.textContent = fmt(p.p);
-    if (p.pr) { const tb = promoTag(p); const t = document.createElement("span"); t.className = tb.className; t.innerHTML = tb.innerHTML; const w = document.createElement("span"); w.className = "col"; w.append(nm, t); b.append(thumb(p), w, pr); }
-    else b.append(thumb(p), nm, pr);
+    const col = document.createElement("span"); col.className = "col";
+    col.append(Object.assign(document.createElement("span"), { className: "nm", textContent: p.n }));
+    const uc = unitCost(p);
+    if (sgSort === "unit" && isFinite(uc)) col.append(Object.assign(document.createElement("span"), { className: "u", textContent: `${fmt(uc)} ${UNIT_TXT[(unitNorm(p) || { k: "g" }).k]}` }));
+    if (p.pr) { const tb = promoTag(p); const t = document.createElement("span"); t.className = tb.className; t.innerHTML = tb.innerHTML; col.append(t); }
+    const pr = document.createElement("span"); pr.className = "pr"; pr.textContent = fmt(sgSort ? effPrice(p) : p.p);
+    b.append(thumb(p), col, pr);
     b.onmousedown = e => e.preventDefault();
     b.onclick = () => { addProduct(p); clearAdd(); };
     box.append(b);
@@ -1142,16 +1188,18 @@ function effPrice(p) {
   return pr && !pr.m ? Math.min(p.p, pr.x / pr.q) : p.p;
 }
 function unitCost(p) {
-  const u = unitNorm(p); if (!u || u.k === "u") return Infinity;
+  const u = unitNorm(p);
+  if (!u) return isKg(p) ? effPrice(p) / 10 : Infinity;   // נמכר לפי משקל: המחיר הוא לק"ג
+  if (u.k === "u") return Infinity;
   return u.v * effPrice(p) / p.p;
 }
 let catSort = loadJSON("cat-sort", "");
-function sortRes(res) {
-  if (!catSort) return res;
-  if (catSort === "chg")   // רק מוצרים שהמחיר שלהם השתנה: קודם מה שהוזל הכי הרבה
+function sortRes(res, mode = catSort) {
+  if (!mode) return res;
+  if (mode === "chg")   // רק מוצרים שהמחיר שלהם השתנה: קודם מה שהוזל הכי הרבה
     return res.filter(p => p.pp != null && p.pp !== p.p).sort((a, b) => (a.p / a.pp) - (b.p / b.pp));
-  const key = catSort === "unit" ? unitCost : effPrice;
-  const dir = catSort === "desc" ? -1 : 1;
+  const key = mode === "unit" ? unitCost : effPrice;
+  const dir = mode === "desc" ? -1 : 1;
   // יציב: מוצרים באותו מחיר נשארים בסדר ההתאמה לחיפוש
   return res.map((p, i) => [key(p), i, p]).sort((a, b) => {
     if (a[0] === Infinity || b[0] === Infinity) return (a[0] === Infinity) - (b[0] === Infinity) || a[1] - b[1];
@@ -1447,7 +1495,7 @@ function tripEditor(t) {
 }
 
 /* ---------- backup & restore ---------- */
-const BACKUP_KEYS = ["shopping-list-v2", "lists", "cur-list", "favs", "history", "dept-order", "big-text", "closed-groups", "budget", "cat-sort", "seen-deals", "compact-view"];
+const BACKUP_KEYS = ["shopping-list-v2", "lists", "cur-list", "favs", "history", "dept-order", "big-text", "closed-groups", "budget", "cat-sort", "seen-deals", "compact-view", "sg-sort"];
 function backupPanel() {
   const panel = document.createElement("div"); panel.className = "panel";
   panel.innerHTML = "<h3>גיבוי ושחזור</h3><p>כל הנתונים (רשימות, קבועים והיסטוריה) שמורים רק בטלפון הזה. כדאי לשמור גיבוי מדי פעם: בקובץים, בדרייב או בהודעה לעצמכם בוואטסאפ.</p>";
