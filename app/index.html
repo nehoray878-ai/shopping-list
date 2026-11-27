@@ -453,6 +453,30 @@ html.big .drow .thumb { width: 60px; height: 60px; }
 .welcome { background: var(--surface); border-radius: var(--r-lg); padding: 14px 16px; }
 .welcome b { display: block; font-size: 1.05rem; font-weight: 800; margin-bottom: 2px; }
 .welcome span { color: var(--muted); font-size: 0.9rem; }
+/* login gate */
+.gate { position: fixed; inset: 0; z-index: 100; background: var(--brand); color: var(--on-brand); display: grid; place-items: center; padding: 24px; overflow-y: auto; }
+.gate-in { max-width: 360px; width: 100%; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
+.gate-in img { border-radius: 22px; box-shadow: 0 6px 20px rgb(0 0 0 / .25); }
+.gate h1 { margin: 0; font-size: 1.7rem; font-weight: 900; }
+.gate-txt { margin: 0; font-size: 1.02rem; color: var(--on-brand-muted); }
+.gbtn { border: 0; border-radius: 99px; background: #fff; color: #1f1f1f; font-weight: 700; font-size: 1.05rem; padding: 13px 22px; min-height: 52px; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgb(0 0 0 / .2); }
+.gbtn:disabled { opacity: .6; }
+.gate-err { margin: 0; min-height: 1.2em; color: #FFD0C7; font-weight: 700; font-size: 0.92rem; }
+.gate-small { margin: 0; font-size: 0.8rem; color: var(--on-brand-muted); }
+.gate .linkbtn { color: var(--on-brand); }
+/* admin */
+.adm-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.adm-stats div { background: var(--surface); border-radius: var(--r-md); padding: 10px; display: flex; flex-direction: column; }
+.adm-stats b { font-size: 1.3rem; font-weight: 800; }
+.adm-stats span { font-size: 0.78rem; color: var(--muted); }
+.adm-u { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-top: 1px solid var(--line); }
+.adm-u:first-child { border-top: 0; }
+.adm-u img, .adm-u .av { width: 38px; height: 38px; border-radius: 50%; flex: none; background: var(--sunk); display: grid; place-items: center; font-weight: 800; }
+.adm-u .t { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.adm-u .t b { font-weight: 700; }
+.adm-u .t span { font-size: 0.78rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.adm-u.blocked .t b { text-decoration: line-through; color: var(--muted); }
+.adm-u .btn { min-height: 36px; padding: 6px 12px; font-size: 0.85rem; }
 /* basket comparison */
 .cmpsum { background: var(--surface); border-radius: var(--r-lg); padding: 12px 14px; font-size: 0.9rem; color: var(--muted); }
 .cmpsum b { color: var(--fg); }
@@ -750,9 +774,12 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
       <button class="mi" id="recurBtn" type="button"></button>
       <button class="mi" id="backupBtn" type="button"></button>
       <button class="mi" id="aboutBtn" type="button"></button>
+      <button class="mi" id="adminBtn" type="button" hidden></button>
+      <button class="mi" id="accountBtn" type="button" hidden></button>
     </div>
     <div class="spanel" id="storePanel" hidden></div>
     <div class="spanel" id="cmpPanel" hidden></div>
+    <div class="spanel" id="adminPanel" hidden></div>
     <div class="spanel" id="listPanel" hidden></div>
     <div class="spanel" id="orderPanel" hidden></div>
     <div class="spanel" id="sharePanel" hidden></div>
@@ -762,6 +789,17 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
     <div class="spanel" id="recurList" hidden></div>
   </div>
 </dialog>
+<div class="gate" id="gate" hidden>
+  <div class="gate-in">
+    <img src="icon-192-v2.png" alt="" width="84" height="84">
+    <h1>רשימת הקניות</h1>
+    <p class="gate-txt" id="gateTxt">כדי להשתמש באפליקציה צריך להתחבר פעם אחת עם חשבון Google.</p>
+    <button class="gbtn" id="gateBtn" type="button"><svg viewBox="0 0 48 48" width="22" height="22" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg><span>התחברות עם Google</span></button>
+    <p class="gate-err" id="gateErr" role="alert"></p>
+    <p class="gate-small">מנהל האפליקציה רואה את השם והמייל שלך ומתי נכנסת. הרשימות שלך נשמרות בטלפון שלך.</p>
+    <button class="linkbtn" id="gateOut" type="button" hidden>התחברות עם חשבון אחר</button>
+  </div>
+</div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script>
@@ -2132,7 +2170,7 @@ $("dealsForm").addEventListener("submit", e => { e.preventDefault(); $("dealsInp
 $("dealsMore").onclick = () => { dealsShown += 40; renderDeals(); };
 
 /* ---------- settings sheet ---------- */
-const SHEET_PANELS = ["storePanel", "cmpPanel", "sheetMenu", "listPanel", "orderPanel", "sharePanel", "backupBox", "aboutBox", "recurPanel", "recurList"];
+const SHEET_PANELS = ["storePanel", "cmpPanel", "adminPanel", "sheetMenu", "listPanel", "orderPanel", "sharePanel", "backupBox", "aboutBox", "recurPanel", "recurList"];
 function menuItem(btn, icon, label, end = ico("chev", "ico chev")) {
   btn.innerHTML = ico(icon) + `<span class="lbl"></span>` + end;
   btn.querySelector(".lbl").textContent = label;
@@ -2184,7 +2222,9 @@ function renderAbout() {
       P("המחירים והמבצעים נלקחים מהמחירון הרשמי שכל רשת מפרסמת לכל סניף לפי חוק שקיפות המחירים, ומתעדכנים פעמיים ביום. שמות ותמונות המוצרים נלקחים מאתר רמי לוי אונליין לפי הברקוד, ולכן לחלק מהמוצרים ברשתות אחרות אין תמונה."),
       P("מבצעי מועדון לקוחות וקופונים לא כלולים. המחיר בקופה עשוי להיות שונה, והסכום ברשימה הוא הערכה בלבד.")),
     card("פרטיות",
-      P("הרשימות, הקבועים, התקציב וההיסטוריה נשמרים רק בטלפון הזה. אין הרשמה, אין מעקב ואין פרסומות." + (FIREBASE_CONFIG ? " רשימה משותפת נשמרת גם בענן, רק אצל מי שקיבל את הקוד." : "")),
+      P(FIREBASE_CONFIG
+        ? "ההתחברות היא עם חשבון Google. מנהל האפליקציה רואה את השם, המייל והתמונה שלך, מתי נכנסת לראשונה ולאחרונה, ואיזה סניף בחרת – ולא יותר. הרשימות, הקבועים, התקציב וההיסטוריה נשמרים בטלפון הזה בלבד. רשימה משותפת נשמרת גם בענן, רק אצל מי שקיבל את הקוד. אין פרסומות."
+        : "הרשימות, הקבועים, התקציב וההיסטוריה נשמרים רק בטלפון הזה. אין הרשמה, אין מעקב ואין פרסומות."),
       P("כדי לא לאבד נתונים כשמחליפים טלפון, כדאי לשמור גיבוי מדי פעם (בתפריט ההגדרות).")),
     card("", P("האפליקציה פרטית ואינה קשורה לאף רשת שיווק.")),
   );
@@ -2310,6 +2350,7 @@ async function ensureFirebase() {
   if (db) return db;
   await loadScript(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-app-compat.js`);
   await loadScript(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-firestore-compat.js`);
+  await loadScript(`https://www.gstatic.com/firebasejs/${FB_VER}/firebase-auth-compat.js`);
   firebase.initializeApp(FIREBASE_CONFIG);
   db = firebase.firestore();
   try { await db.enablePersistence({ synchronizeTabs: true }); } catch {}
@@ -2406,7 +2447,7 @@ function renderSharePanel() {
   }
 }
 
-if (FIREBASE_CONFIG) {
+function startShared() {
   $("miShare").hidden = false;
   $("miShare").onclick = () => { renderSharePanel(); sheetShow("sharePanel", "רשימה משותפת"); };
   setSync("off");
@@ -2874,8 +2915,138 @@ if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("mess
   clearTimeout(refreshTimer);   // כמה קבצים מתעדכנים יחד – טוענים פעם אחת
   refreshTimer = setTimeout(() => { storesIdx = null; loadCatalog().then(() => { if (loaded) toast("המחירים עודכנו"); }); }, 1500);
 });
-showView("list");
-loadCatalog();
+/* ---------- login: Google account, required for everyone (only when Firebase is set up) ---------- */
+// מנהלים: המזהה (uid) של חשבון ה-Google – לא המייל, כי הקוד ציבורי. מופיע גם ב-firestore.rules
+const ADMIN_UIDS = [];
+let me = null, startedApp = false;
+const isAdmin = () => !!me && ADMIN_UIDS.includes(me.uid);
+function startApp() {
+  if (startedApp) return; startedApp = true;
+  $("gate").hidden = true;
+  showView("list");
+  loadCatalog();
+  if (FIREBASE_CONFIG) startShared();
+}
+function showGate(msg, err) {
+  $("gate").hidden = false;
+  $("gateTxt").textContent = msg || "כדי להשתמש באפליקציה צריך להתחבר פעם אחת עם חשבון Google.";
+  $("gateErr").textContent = err || "";
+  $("gateBtn").disabled = false;
+}
+const authErr = e => ({
+  "auth/network-request-failed": "אין חיבור לאינטרנט. נסו שוב.",
+  "auth/popup-closed-by-user": "",
+  "auth/cancelled-popup-request": "",
+  "auth/unauthorized-domain": "האתר עוד לא מאושר בהגדרות Firebase.",
+}[e && e.code] ?? "ההתחברות לא הצליחה. נסו שוב.");
+$("gateBtn").onclick = async () => {
+  $("gateBtn").disabled = true; $("gateErr").textContent = "";
+  try {
+    await ensureFirebase();
+    const prov = new firebase.auth.GoogleAuthProvider();
+    prov.setCustomParameters({ prompt: "select_account" });
+    try { await firebase.auth().signInWithPopup(prov); }
+    catch (e) {
+      // באפליקציה שמותקנת במסך הבית חלון קופץ לא תמיד נפתח – עוברים לדף ההתחברות ובחזרה
+      if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment"].includes(e.code)) await firebase.auth().signInWithRedirect(prov);
+      else throw e;
+    }
+  } catch (e) { console.warn("sign-in", e); $("gateErr").textContent = authErr(e); $("gateBtn").disabled = false; }
+};
+$("gateOut").onclick = () => firebase.auth().signOut().then(() => showGate());
+
+// כניסה: נרשם אצל המנהל (שם, מייל, תמונה, מתי, איזה סניף), לכל היותר פעם בשעה
+async function recordVisit(u) {
+  const ref = db.collection("users").doc(u.uid);
+  const snap = await ref.get().catch(() => null);
+  const d = snap && snap.exists ? snap.data() : null;
+  if (d && d.blocked) return false;
+  const now = Date.now();
+  if (!d || !d.last || now - d.last > 3600e3 || d.version !== APP_VERSION || (branch && d.branch !== `${branch.chainName} ${branch.name}`)) {
+    const doc = { name: u.displayName || "", email: u.email || "", photo: u.photoURL || "", last: now, version: APP_VERSION,
+      branch: branch ? `${branch.chainName} ${branch.name}` : "", standalone: !!standalone, visits: (d && d.visits || 0) + 1 };
+    if (!d) doc.first = now;
+    ref.set(doc, { merge: true }).catch(e => console.warn("visit", e));
+  }
+  return true;
+}
+function initAuth() {
+  if (!FIREBASE_CONFIG) { startApp(); return; }
+  // מי שכבר התחבר בטלפון הזה נכנס מיד, גם בלי אינטרנט בסופר
+  if (read("auth-uid")) startApp(); else showGate("רגע…");
+  ensureFirebase().then(() => {
+    firebase.auth().getRedirectResult().catch(e => { $("gateErr").textContent = authErr(e); });
+    firebase.auth().onAuthStateChanged(async u => {
+      me = u;
+      if (!u) { store("auth-uid", null); if (startedApp) location.reload(); else showGate(); return; }
+      store("auth-uid", u.uid);
+      const ok = await recordVisit(u);
+      if (!ok) {
+        $("gateOut").hidden = false; $("gateBtn").hidden = true;
+        showGate("אין לך גישה לאפליקציה. אם זו טעות, פנו למי ששלח לכם אותה.");
+        $("gate").hidden = false;
+        return;
+      }
+      $("adminBtn").hidden = !isAdmin();
+      $("accountBtn").hidden = false;
+      menuItem($("accountBtn"), "info", `מחובר/ת: ${u.displayName || u.email}`, '<span class="vsub" style="color:var(--muted);font-size:.85rem">התנתקות</span>');
+      startApp();
+    });
+  }).catch(() => {
+    if (!startedApp) showGate("צריך חיבור לאינטרנט כדי להתחבר בפעם הראשונה.", "אין חיבור כרגע. נסו שוב בעוד רגע.");
+  });
+}
+let outSure = false;
+$("accountBtn").onclick = () => {
+  if (!outSure) { outSure = true; toast("ללחוץ שוב כדי להתנתק"); setTimeout(() => outSure = false, 4000); return; }
+  firebase.auth().signOut();
+};
+
+/* ---------- admin: who uses the app, block / unblock ---------- */
+menuItem($("adminBtn"), "rows", "ניהול משתמשים");
+$("adminBtn").onclick = () => { sheetShow("adminPanel", "ניהול משתמשים"); renderAdmin(); };
+async function renderAdmin() {
+  const panel = $("adminPanel"); panel.textContent = "";
+  panel.append(Object.assign(document.createElement("p"), { textContent: "טוען…" }));
+  let users;
+  try { users = (await db.collection("users").orderBy("last", "desc").get()).docs.map(d => ({ uid: d.id, ...d.data() })); }
+  catch (e) { panel.querySelector("p").textContent = "אין גישה לרשימת המשתמשים (בדקו את כללי האבטחה)."; return; }
+  panel.textContent = "";
+  const day = 864e5, now = Date.now();
+  const stats = document.createElement("div"); stats.className = "adm-stats";
+  const stat = (n, l) => { const d = document.createElement("div"); d.append(Object.assign(document.createElement("b"), { textContent: n }), Object.assign(document.createElement("span"), { textContent: l })); stats.append(d); };
+  stat(users.length, "משתמשים"); stat(users.filter(u => now - u.last < 7 * day).length, "פעילים השבוע"); stat(users.filter(u => u.first && now - u.first < 7 * day).length, "חדשים השבוע");
+  const q = document.createElement("input"); q.className = "field"; q.type = "search"; q.placeholder = "חיפוש לפי שם או מייל"; q.autocomplete = "off";
+  const list = document.createElement("div"); list.className = "cmplist";
+  const when = t => { if (!t) return ""; const d = Math.floor((now - t) / day); return d <= 0 ? "היום" : d === 1 ? "אתמול" : `לפני ${d} ימים`; };
+  const draw = () => {
+    const t = norm(q.value);
+    list.textContent = "";
+    for (const u of users.filter(u => !t || norm(u.name + " " + u.email).includes(t))) {
+      const r = document.createElement("div"); r.className = "adm-u" + (u.blocked ? " blocked" : "");
+      const av = u.photo ? Object.assign(document.createElement("img"), { src: u.photo, alt: "", referrerPolicy: "no-referrer" }) : Object.assign(document.createElement("span"), { className: "av", textContent: (u.name || u.email || "?")[0] });
+      const tx = document.createElement("span"); tx.className = "t";
+      tx.append(Object.assign(document.createElement("b"), { textContent: u.name || u.email }),
+        Object.assign(document.createElement("span"), { textContent: u.email }),
+        Object.assign(document.createElement("span"), { textContent: [`נכנס ${when(u.last)}`, u.first ? `הצטרף ${new Date(u.first).toLocaleDateString("he-IL")}` : "", u.branch, u.version ? `גרסה ${u.version}` : "", u.standalone ? "מותקן" : ""].filter(Boolean).join(" · ") }));
+      r.append(av, tx);
+      if (u.uid !== me.uid) {
+        const b = document.createElement("button"); b.type = "button"; b.className = "btn" + (u.blocked ? "" : " ghost"); b.textContent = u.blocked ? "ביטול חסימה" : "חסימה";
+        b.onclick = async () => {
+          b.disabled = true;
+          try { await db.collection("users").doc(u.uid).set({ blocked: !u.blocked }, { merge: true }); u.blocked = !u.blocked; toast(u.blocked ? `${u.name || u.email} נחסם/ה` : "החסימה בוטלה"); draw(); }
+          catch { toast("השינוי לא נשמר"); b.disabled = false; }
+        };
+        r.append(b);
+      }
+      list.append(r);
+    }
+  };
+  q.addEventListener("input", draw); draw();
+  panel.append(stats, q, list);
+}
+
+initAuth();
 </script>
 </body>
 </html>

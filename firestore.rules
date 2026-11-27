@@ -1,0 +1,28 @@
+// כללי האבטחה של Firestore. מדביקים ב-Firebase Console → Firestore Database → Rules → Publish.
+// ADMIN_UID: המזהה של חשבון ה-Google של המנהל (Authentication → Users → User UID). גם ב-ADMIN_UIDS ב-app/index.html.
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isAdmin() { return signedIn() && request.auth.uid in ['ADMIN_UID']; }
+    function blocked() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('blocked', false) == true;
+    }
+
+    // משתמשים: כל אחד רואה ומעדכן רק את עצמו (בלי אפשרות לבטל חסימה), המנהל רואה את כולם וחוסם
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow create: if signedIn() && request.auth.uid == uid && !('blocked' in request.resource.data);
+      allow update: if isAdmin()
+        || (signedIn() && request.auth.uid == uid
+            && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['blocked', 'first']));
+      allow delete: if isAdmin();
+    }
+
+    // רשימה משותפת: רק למחוברים שלא נחסמו (מי שיודע את קוד הרשימה)
+    match /lists/{code}/items/{item} {
+      allow read, write: if signedIn() && !blocked();
+    }
+  }
+}
