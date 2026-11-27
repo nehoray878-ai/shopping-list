@@ -1,12 +1,12 @@
 // שומר את האפליקציה במכשיר כדי שתיפתח מהר וגם בלי אינטרנט בסופר.
 // כשמעלים גרסה חדשה: מעלים את VERSION, והטלפונים יתעדכנו בפתיחה הבאה.
-const VERSION = "v15";
+const VERSION = "v16";
 const SHELL = "shell-" + VERSION;
 const DATA = "data-v1";       // הקטלוג: לא נמחק בין גרסאות, כדי שתמיד יהיו מחירים
 const IMG = "img-v1";
 const FONTS = "fonts-v1";
 const KEEP = [SHELL, DATA, IMG, FONTS];
-const SHELL_FILES = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png", "icon-180.png"];
+const SHELL_FILES = ["./", "index.html", "manifest.webmanifest", "icon-192-v2.png", "icon-512-v2.png", "icon-maskable-512-v2.png", "icon-180-v2.png"];
 const MAX_IMAGES = 300;       // תקרה לתמונות שמורות, כדי שהזיכרון לא יתמלא
 const PAGE_TIMEOUT = 3500;    // אחרי כמה זמן בלי רשת פותחים את הדף מהזיכרון
 

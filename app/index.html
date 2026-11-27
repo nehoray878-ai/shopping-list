@@ -6,14 +6,14 @@
 <title>רשימת הקניות</title>
 <meta name="description" content="רשימת קניות עם המחירים והמבצעים של סניף רמי לוי">
 <meta name="theme-color" content="#1E5A3C">
-<meta name="app-version" content="2.1">
+<meta name="app-version" content="2.2">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="קניות">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icon-180.png">
-<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180-v2.png">
+<link rel="icon" href="icon-192-v2.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;700;800;900&display=swap">
@@ -1609,7 +1609,7 @@ function renderAbout() {
   };
   const P = t => Object.assign(document.createElement("p"), { textContent: t });
   const brand = document.createElement("div"); brand.className = "brand";
-  brand.innerHTML = `<img src="icon-192.png" alt=""><span><b>רשימת הקניות</b><span class="vsub"></span></span>`;
+  brand.innerHTML = `<img src="icon-192-v2.png" alt=""><span><b>רשימת הקניות</b><span class="vsub"></span></span>`;
   brand.querySelector(".vsub").textContent = `גרסה ${APP_VERSION}`;
   const dl = document.createElement("dl");
   const row = (k, v) => dl.append(Object.assign(document.createElement("dt"), { textContent: k }), Object.assign(document.createElement("dd"), { textContent: v }));
