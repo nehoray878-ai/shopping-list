@@ -7,7 +7,7 @@
 <title>רשימת הקניות</title>
 <meta name="description" content="רשימת קניות עם המחירים והמבצעים של הסניף שלך: רמי לוי, שופרסל, ויקטורי, יוחננוף, אושר עד וקרפור">
 <meta name="theme-color" content="#1E5A3C">
-<meta name="app-version" content="4.1">
+<meta name="app-version" content="4.2">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="קניות">
@@ -459,6 +459,10 @@ html.big .drow .thumb { width: 60px; height: 60px; }
 .gate-in img { border-radius: 22px; box-shadow: 0 6px 20px rgb(0 0 0 / .25); }
 .gate h1 { margin: 0; font-size: 1.7rem; font-weight: 900; }
 .gate-txt { margin: 0; font-size: 1.02rem; color: var(--on-brand-muted); }
+.gate-form { display: flex; flex-direction: column; gap: 10px; width: 100%; }
+.gate-input { font: inherit; font-size: 1.1rem; border: 0; border-radius: 14px; padding: 14px 16px; min-height: 52px; background: #fff; color: #1f1f1f; text-align: center; }
+.gate-input:focus { outline: 3px solid var(--lime); }
+.gate-form .gbtn { justify-content: center; background: var(--lime); color: #171717; font-weight: 800; }
 .gbtn { border: 0; border-radius: 99px; background: #fff; color: #1f1f1f; font-weight: 700; font-size: 1.05rem; padding: 13px 22px; min-height: 52px; display: inline-flex; align-items: center; gap: 10px; box-shadow: 0 2px 8px rgb(0 0 0 / .2); }
 .gbtn:disabled { opacity: .6; }
 .gate-err { margin: 0; min-height: 1.2em; color: #FFD0C7; font-weight: 700; font-size: 0.92rem; }
@@ -793,11 +797,14 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
   <div class="gate-in">
     <img src="icon-192-v2.png" alt="" width="84" height="84">
     <h1>רשימת הקניות</h1>
-    <p class="gate-txt" id="gateTxt">כדי להשתמש באפליקציה צריך להתחבר פעם אחת עם חשבון Google.</p>
-    <button class="gbtn" id="gateBtn" type="button"><svg viewBox="0 0 48 48" width="22" height="22" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg><span>התחברות עם Google</span></button>
+    <p class="gate-txt" id="gateTxt">כדי להיכנס, כתבו את כתובת המייל שלכם.</p>
+    <form class="gate-form" id="gateForm" novalidate>
+      <input class="gate-input" id="gateEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="your@email.com" aria-label="כתובת מייל" dir="ltr">
+      <button class="gbtn" id="gateBtn" type="submit">כניסה</button>
+    </form>
     <p class="gate-err" id="gateErr" role="alert"></p>
-    <p class="gate-small">🔒 נשמרת רק כתובת המייל שלך, כדי לדעת מי משתמש באפליקציה. הרשימות, הקניות וההיסטוריה שלך נשארות בטלפון שלך – אף אחד לא רואה אותן.</p>
-    <button class="linkbtn" id="gateOut" type="button" hidden>התחברות עם חשבון אחר</button>
+    <p class="gate-small">🔒 נשמרת רק כתובת המייל שכתבת, כדי לדעת מי משתמש באפליקציה. בלי סיסמה ובלי אישורים. הרשימות, הקניות וההיסטוריה שלך נשארות בטלפון שלך – אף אחד לא רואה אותן.</p>
+    <button class="linkbtn" id="gateOut" type="button" hidden>כניסה עם מייל אחר</button>
   </div>
 </div>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
@@ -807,7 +814,7 @@ const $ = id => document.getElementById(id);
 const LS_KEY = "shopping-list-v2";
 const fmt = n => "₪" + n.toFixed(2);
 const APP_VERSION = document.querySelector('meta[name="app-version"]').content;   // לעדכן ב-<head> בכל גרסה
-const WHATS_NEW_ID = "4.0";   // לשנות רק כשיש כרטיס "מה חדש" חדש להציג
+const WHATS_NEW_ID = "4.2";   // לשנות רק כשיש כרטיס "מה חדש" חדש להציג
 
 /* ---------- icons (one stroke style everywhere, instead of emoji) ---------- */
 const ICON_PATHS = {
@@ -2223,10 +2230,11 @@ function renderAbout() {
       P("מבצעי מועדון לקוחות וקופונים לא כלולים. המחיר בקופה עשוי להיות שונה, והסכום ברשימה הוא הערכה בלבד.")),
     card("פרטיות",
       P(FIREBASE_CONFIG
-        ? "מההתחברות עם Google נשמרת רק כתובת המייל שלך ומתי נכנסת – כדי לדעת מי משתמש באפליקציה. מה שאתם קונים, הרשימות, הסניף, התקציב וההיסטוריה נשמרים רק בטלפון הזה ואף אחד לא רואה אותם. (אם תפעילו רשימה משותפת, היא נשמרת גם בענן כדי שתופיע אצל מי שקיבל את הקוד.) אין פרסומות."
+        ? "בכניסה נשמרת רק כתובת המייל שכתבת ומתי נכנסת – כדי לדעת מי משתמש באפליקציה. מה שאתם קונים, הרשימות, הסניף, התקציב וההיסטוריה נשמרים רק בטלפון הזה ואף אחד לא רואה אותם. (אם תפעילו רשימה משותפת, היא נשמרת גם בענן כדי שתופיע אצל מי שקיבל את הקוד.) אין פרסומות."
         : "הרשימות, הקבועים, התקציב וההיסטוריה נשמרים רק בטלפון הזה. אין הרשמה, אין מעקב ואין פרסומות."),
       P("כדי לא לאבד נתונים כשמחליפים טלפון, כדאי לשמור גיבוי מדי פעם (בתפריט ההגדרות).")),
     card("", P("האפליקציה פרטית ואינה קשורה לאף רשת שיווק.")),
+    ...(FIREBASE_CONFIG && !isAdmin() ? [Object.assign(document.createElement("button"), { type: "button", className: "linkbtn", textContent: "כניסת מנהל", onclick: adminLogin })] : []),
   );
 }
 
@@ -2337,7 +2345,14 @@ document.addEventListener("visibilitychange", () => { if (document.visibilitySta
 
 /* ---------- shared list (Firebase) ---------- */
 // ההגדרות של פרויקט Firebase (אינן סוד: הן מזהות את הפרויקט, ההרשאות נקבעות בכללי האבטחה)
-const FIREBASE_CONFIG = null;
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyA8eFptbxMeVIY9tcNdyLePxkmAM_jRIx0",
+  authDomain: "shopping-list-ab2ed.firebaseapp.com",
+  projectId: "shopping-list-ab2ed",
+  storageBucket: "shopping-list-ab2ed.firebasestorage.app",
+  messagingSenderId: "928716240097",
+  appId: "1:928716240097:web:81af94c5c95729ad22b3a0",
+};
 const FB_VER = "10.12.2";
 const CODE_ABC = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 let db = null, unsub = null, last = new Map(), syncState = "off";
@@ -2524,11 +2539,11 @@ function renderWhatsNew() {
   const veteran = read(LS_KEY) != null || read("history") != null || read("favs") != null;
   if (!veteran) { store("whats-new", WHATS_NEW_ID); return; }
   const box = $("whatsNew");
-  box.innerHTML = `<div class="wn-hd"><span class="wn-badge">חדש</span><h2 id="wnTitle">עכשיו אפשר לבחור רשת וסניף</h2></div>
+  box.innerHTML = `<div class="wn-hd"><span class="wn-badge">חדש</span><h2 id="wnTitle">חדש באפליקציה</h2></div>
     <ul>
-      <li>רמי לוי, שופרסל, ויקטורי, יוחננוף, אושר עד וקרפור – כמעט 700 סניפים, עם המחירים והמבצעים של כל סניף.</li>
-      <li>אצלכם לא השתנה כלום: נשארתם ברמי לוי עפולה.</li>
-      <li>להחלפת רשת או סניף: בכפתור ${ico("menu")} שלמעלה, בשורה הראשונה. הרשימה נשארת כמו שהיא.</li>
+      <li><b>בחירת רשת וסניף:</b> רמי לוי, שופרסל, ויקטורי, יוחננוף, אושר עד וקרפור. אצלכם לא השתנה כלום – נשארתם ברמי לוי עפולה. להחלפה: בכפתור ${ico("menu")} למעלה.</li>
+      <li><b>השוואת סל:</b> מתחת לסכום – כמה הרשימה שלכם עולה בסניפים אחרים בעיר.</li>
+      <li>הרשימות, הקבועים וההיסטוריה שלכם נשארו בדיוק כמו שהיו.</li>
     </ul>
     <div class="acts"><button class="btn" type="button" data-a="ok">הבנתי, תודה</button></div>`;
   const done = () => { store("whats-new", WHATS_NEW_ID); box.hidden = true; };
@@ -2915,11 +2930,12 @@ if ("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("mess
   clearTimeout(refreshTimer);   // כמה קבצים מתעדכנים יחד – טוענים פעם אחת
   refreshTimer = setTimeout(() => { storesIdx = null; loadCatalog().then(() => { if (loaded) toast("המחירים עודכנו"); }); }, 1500);
 });
-/* ---------- login: Google account, required for everyone (only when Firebase is set up) ---------- */
+/* ---------- login: everyone types an email (no password, no approval); the admin signs in with Google ---------- */
 // מנהלים: המזהה (uid) של חשבון ה-Google – לא המייל, כי הקוד ציבורי. מופיע גם ב-firestore.rules
-const ADMIN_UIDS = [];
+const ADMIN_UIDS = ["4EJ0sat6LNforqh8IFux6UAr23r1"];
 let me = null, startedApp = false;
 const isAdmin = () => !!me && ADMIN_UIDS.includes(me.uid);
+const myEmail = () => me ? (me.isAnonymous ? read("auth-email") || "" : me.email || "") : "";
 function startApp() {
   if (startedApp) return; startedApp = true;
   $("gate").hidden = true;
@@ -2928,79 +2944,100 @@ function startApp() {
   if (FIREBASE_CONFIG) startShared();
 }
 function showGate(msg, err) {
+  pickerFirst = false; closeSheet();   // שום חלון לא נשאר מעל מסך הכניסה
   $("gate").hidden = false;
-  $("gateTxt").textContent = msg || "כדי להשתמש באפליקציה צריך להתחבר פעם אחת עם חשבון Google.";
+  $("gateTxt").textContent = msg || "כדי להיכנס, כתבו את כתובת המייל שלכם.";
   $("gateErr").textContent = err || "";
   $("gateBtn").disabled = false;
+  $("gateForm").hidden = false;
 }
-const authErr = e => ({
-  "auth/network-request-failed": "אין חיבור לאינטרנט. נסו שוב.",
-  "auth/popup-closed-by-user": "",
-  "auth/cancelled-popup-request": "",
-  "auth/unauthorized-domain": "האתר עוד לא מאושר בהגדרות Firebase.",
-}[e && e.code] ?? "ההתחברות לא הצליחה. נסו שוב.");
-$("gateBtn").onclick = async () => {
+const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+// כניסה: מקלידים מייל וזהו. ברקע נוצר חשבון אורח אנונימי (בלי שום מסך אישור) והמייל נשמר אצל המנהל
+$("gateForm").onsubmit = async e => {
+  e.preventDefault();
+  const email = $("gateEmail").value.trim().toLowerCase();
+  if (!validEmail(email)) { $("gateErr").textContent = "כתובת המייל לא נראית תקינה. בדקו ונסו שוב."; return; }
   $("gateBtn").disabled = true; $("gateErr").textContent = "";
   try {
     await ensureFirebase();
-    const prov = new firebase.auth.GoogleAuthProvider();
-    prov.setCustomParameters({ prompt: "select_account" });
-    prov.addScope("email");
-    try { await firebase.auth().signInWithPopup(prov); }
-    catch (e) {
-      // באפליקציה שמותקנת במסך הבית חלון קופץ לא תמיד נפתח – עוברים לדף ההתחברות ובחזרה
-      if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment"].includes(e.code)) await firebase.auth().signInWithRedirect(prov);
-      else throw e;
-    }
-  } catch (e) { console.warn("sign-in", e); $("gateErr").textContent = authErr(e); $("gateBtn").disabled = false; }
+    store("auth-email", email);
+    const cur = firebase.auth().currentUser;
+    if (cur) await onUser(cur); else await firebase.auth().signInAnonymously();
+  } catch (err) {
+    console.warn("sign-in", err);
+    $("gateErr").textContent = err && err.code === "auth/network-request-failed" ? "אין חיבור לאינטרנט. נסו שוב." : "הכניסה לא הצליחה. נסו שוב בעוד רגע.";
+    $("gateBtn").disabled = false;
+  }
 };
-$("gateOut").onclick = () => firebase.auth().signOut().then(() => showGate());
+$("gateOut").onclick = () => { store("auth-email", null); $("gateOut").hidden = true; $("gateEmail").value = ""; showGate(); };
 
-// כניסה: נשמרים רק המייל ומתי נכנסו (וגרסת האפליקציה, לתמיכה טכנית). לא שם, לא תמונה, לא סניף ולא שום דבר מהרשימה
-async function recordVisit(u) {
+// כניסה נרשמת אצל המנהל: רק המייל ומתי (וגרסת האפליקציה, לתמיכה טכנית). לא שם, לא סניף ולא שום דבר מהרשימה
+async function recordVisit(u, email) {
+  const blockedEmail = await db.collection("blockedEmails").doc(email).get().then(d => d.exists).catch(() => false);
+  if (blockedEmail) return false;
   const ref = db.collection("users").doc(u.uid);
   const snap = await ref.get().catch(() => null);
   const d = snap && snap.exists ? snap.data() : null;
   if (d && d.blocked) return false;
   const now = Date.now();
-  if (!d || !d.last || now - d.last > 3600e3 || d.version !== APP_VERSION) {
-    const doc = { email: u.email || "", last: now, version: APP_VERSION, standalone: !!standalone };
+  if (!d || !d.last || now - d.last > 3600e3 || d.version !== APP_VERSION || d.email !== email) {
+    const doc = { email, last: now, version: APP_VERSION, standalone: !!standalone };
     if (!d) doc.first = now;
     ref.set(doc, { merge: true }).catch(e => console.warn("visit", e));
   }
   return true;
 }
+async function onUser(u) {
+  me = u;
+  if (!u) { if (startedApp) location.reload(); else showGate(); return; }
+  const email = myEmail();
+  if (!email) { showGate(); return; }            // חשבון אורח בלי מייל: מבקשים את המייל
+  store("auth-uid", u.uid);
+  const ok = await recordVisit(u, email);
+  if (!ok) {
+    pickerFirst = false; closeSheet();
+    $("gateForm").hidden = true; $("gateOut").hidden = false;
+    $("gate").hidden = false; $("gateErr").textContent = "";
+    $("gateTxt").textContent = "אין לך גישה לאפליקציה. אם זו טעות, פנו למי ששלח לכם אותה.";
+    return;
+  }
+  $("adminBtn").hidden = !isAdmin();
+  $("accountBtn").hidden = false;
+  menuItem($("accountBtn"), "info", `מחובר/ת: ${email}`, '<span class="vsub" style="color:var(--muted);font-size:.85rem">יציאה</span>');
+  startApp();
+}
 function initAuth() {
   if (!FIREBASE_CONFIG) { startApp(); return; }
-  // מי שכבר התחבר בטלפון הזה נכנס מיד, גם בלי אינטרנט בסופר
-  if (read("auth-uid")) startApp(); else showGate("רגע…");
+  // מי שכבר נכנס בטלפון הזה נכנס מיד, גם בלי אינטרנט בסופר
+  if (read("auth-uid") && read("auth-email")) startApp(); else showGate("רגע…");
   ensureFirebase().then(() => {
-    firebase.auth().getRedirectResult().catch(e => { $("gateErr").textContent = authErr(e); });
-    firebase.auth().onAuthStateChanged(async u => {
-      me = u;
-      if (!u) { store("auth-uid", null); if (startedApp) location.reload(); else showGate(); return; }
-      store("auth-uid", u.uid);
-      const ok = await recordVisit(u);
-      if (!ok) {
-        $("gateOut").hidden = false; $("gateBtn").hidden = true;
-        showGate("אין לך גישה לאפליקציה. אם זו טעות, פנו למי ששלח לכם אותה.");
-        $("gate").hidden = false;
-        return;
-      }
-      $("adminBtn").hidden = !isAdmin();
-      $("accountBtn").hidden = false;
-      menuItem($("accountBtn"), "info", `מחובר/ת: ${u.email}`, '<span class="vsub" style="color:var(--muted);font-size:.85rem">התנתקות</span>');
-      startApp();
-    });
+    firebase.auth().getRedirectResult().catch(() => {});
+    firebase.auth().onAuthStateChanged(onUser);
   }).catch(() => {
-    if (!startedApp) showGate("צריך חיבור לאינטרנט כדי להתחבר בפעם הראשונה.", "אין חיבור כרגע. נסו שוב בעוד רגע.");
+    if (!startedApp) showGate("צריך חיבור לאינטרנט כדי להיכנס בפעם הראשונה.", "אין חיבור כרגע. נסו שוב בעוד רגע.");
   });
 }
 let outSure = false;
 $("accountBtn").onclick = () => {
-  if (!outSure) { outSure = true; toast("ללחוץ שוב כדי להתנתק"); setTimeout(() => outSure = false, 4000); return; }
+  if (!outSure) { outSure = true; toast("ללחוץ שוב כדי לצאת"); setTimeout(() => outSure = false, 4000); return; }
+  store("auth-email", null); store("auth-uid", null);
   firebase.auth().signOut();
 };
+// כניסת מנהל (רק לבעל האפליקציה): Google, כדי שאף אחד אחר לא יוכל לראות את רשימת המשתמשים
+async function adminLogin() {
+  try {
+    await ensureFirebase();
+    const prov = new firebase.auth.GoogleAuthProvider();
+    prov.setCustomParameters({ prompt: "select_account" });
+    try { await firebase.auth().signInWithPopup(prov); }
+    catch (e) {
+      if (["auth/popup-blocked", "auth/operation-not-supported-in-this-environment"].includes(e.code)) await firebase.auth().signInWithRedirect(prov);
+      else throw e;
+    }
+    if (!isAdmin()) toast("החשבון הזה אינו מנהל");
+    else { toast("נכנסת כמנהל"); closeSheet(); }
+  } catch (e) { if (e && e.code !== "auth/popup-closed-by-user") toast("הכניסה לא הצליחה"); }
+}
 
 /* ---------- admin: who uses the app, block / unblock ---------- */
 menuItem($("adminBtn"), "rows", "ניהול משתמשים");
@@ -3033,7 +3070,12 @@ async function renderAdmin() {
         const b = document.createElement("button"); b.type = "button"; b.className = "btn" + (u.blocked ? "" : " ghost"); b.textContent = u.blocked ? "ביטול חסימה" : "חסימה";
         b.onclick = async () => {
           b.disabled = true;
-          try { await db.collection("users").doc(u.uid).set({ blocked: !u.blocked }, { merge: true }); u.blocked = !u.blocked; toast(u.blocked ? `${u.email} נחסם/ה` : "החסימה בוטלה"); draw(); }
+          try {
+            const next = !u.blocked;
+            const be = db.collection("blockedEmails").doc(u.email || "-");
+            await db.collection("users").doc(u.uid).set({ blocked: next }, { merge: true });
+            if (u.email) await (next ? be.set({ at: Date.now() }) : be.delete());
+            for (const o of users) if (o.email === u.email) o.blocked = next; toast(u.blocked ? `${u.email} נחסם/ה` : "החסימה בוטלה"); draw(); }
           catch { toast("השינוי לא נשמר"); b.disabled = false; }
         };
         r.append(b);
