@@ -6,7 +6,7 @@
 <title>רשימת הקניות</title>
 <meta name="description" content="רשימת קניות עם המחירים והמבצעים של סניף רמי לוי">
 <meta name="theme-color" content="#1E5A3C">
-<meta name="app-version" content="2.2">
+<meta name="app-version" content="2.3">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="קניות">
@@ -27,6 +27,7 @@
   --sticker: #FFD84D; --promo-bg: #FFF4CC; --promo-fg: #5C4400;
   --ink: #171717; --on-ink: #FFFFFF; --ink-accent: #D7F25C;
   --danger: #B42318; --down: #1E7A4C;
+  --done-bg: #D6EDD3; --done-fg: #14532D;   /* מוצר שכבר בעגלה */
   --tile-tints: #E9F3E1;
   --font: "Rubik", "Arial Hebrew", system-ui, sans-serif;
   --tabbar: 78px;
@@ -40,6 +41,7 @@
     --promo-bg: #3A3216; --promo-fg: #FFE58A;
     --ink: #F3EFE6; --on-ink: #11130F; --ink-accent: #1E5A3C;
     --danger: #FF8A7A; --down: #7FD9A4;
+    --done-bg: #1F3A27; --done-fg: #A8E6BC;
     color-scheme: dark;
   }
 }
@@ -195,8 +197,12 @@ ul.items { list-style: none; margin: 0; padding: 0; display: grid; grid-template
 .price s { font-size: 0.75rem; color: var(--muted); }
 .price .na { font-size: 0.8rem; color: var(--muted); font-weight: 500; }
 .it .incart { font-size: 0.82rem; font-weight: 700; color: var(--down); }
-.it.done { opacity: .62; }
-.it.done .nm { text-decoration: line-through; }
+.it { transition: background-color .2s; }
+.it.done { background: var(--done-bg); }
+.it.done .nm { text-decoration: line-through; text-decoration-thickness: 2px; color: var(--done-fg); }
+.it.done .meta, .it.done .price, .it.done .price s { color: var(--done-fg); }
+.it.done .incart { color: var(--done-fg); }
+.it.done .thumb { opacity: .7; }
 .stepper { flex: none; display: flex; align-items: center; background: var(--ink); color: var(--on-ink); border-radius: 12px; }
 .stepper button { width: 32px; height: 38px; border: 0; background: transparent; font-size: 1.15rem; font-weight: 700; line-height: 1; padding: 0; color: var(--on-ink); }
 .stepper button:last-child { color: var(--ink-accent); }
