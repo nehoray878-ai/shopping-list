@@ -6,7 +6,7 @@
 <title>רשימת הקניות</title>
 <meta name="description" content="רשימת קניות עם המחירים והמבצעים של סניף רמי לוי">
 <meta name="theme-color" content="#1E5A3C">
-<meta name="app-version" content="3.0">
+<meta name="app-version" content="3.1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="קניות">
@@ -493,6 +493,27 @@ ul.items.cartlist { grid-template-columns: minmax(0, 1fr); gap: 6px; }
 .cartlist .it .foot { grid-area: foot; margin-top: 0; }
 .cartlist .price b { font-size: 0.98rem; }
 
+/* ===== recurring products ===== */
+.ctrls { display: flex; align-items: center; gap: 6px; }
+.rep { width: 34px; height: 38px; border: 0; border-radius: 10px; background: var(--sunk); color: var(--muted); display: grid; place-items: center; padding: 0; flex: none; }
+.rep .ico { width: 17px; height: 17px; }
+.rep.on { background: var(--lime); color: #171717; }
+.rec-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 0.74rem; font-weight: 700; color: var(--down); }
+.rec-tag .ico { width: 13px; height: 13px; }
+.ropts { background: var(--surface); border-radius: var(--r-lg); overflow: hidden; display: flex; flex-direction: column; }
+.ropt { display: flex; align-items: center; gap: 12px; width: 100%; border: 0; border-top: 1px solid var(--line); background: transparent; padding: 14px 16px; min-height: 52px; text-align: start; font-size: 1rem; }
+.ropt:first-child { border-top: 0; }
+.ropt .dotc { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); flex: none; display: grid; place-items: center; }
+.ropt[aria-checked="true"] .dotc { border-color: var(--brand); background: var(--brand); box-shadow: inset 0 0 0 4px var(--surface); }
+.ropt.off { color: var(--danger); }
+.rlist { display: flex; flex-direction: column; gap: 6px; }
+.rrow { display: flex; align-items: center; gap: 8px; background: var(--surface); border-radius: 14px; padding: 6px 8px; }
+.rrow .thumb { width: 40px; height: 40px; }
+.rrow .n { flex: 1; min-width: 0; font-size: 0.92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rrow select { font: inherit; font-size: 0.88rem; padding: 7px 8px; border: 2px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--fg); }
+.recsug .hd strong .ico { width: 18px; height: 18px; }
+.recsug .arow .go { border: 0; background: var(--ink); color: var(--on-ink); font: inherit; font-weight: 700; font-size: 0.82rem; border-radius: 10px; padding: 8px 10px; flex: none; }
+
 /* ===== what's new (one-time card) ===== */
 .whatsnew { background: var(--lime); color: #171717; border-radius: var(--r-lg); padding: 16px; display: flex; flex-direction: column; gap: 10px; }
 .whatsnew .wn-hd { display: flex; align-items: center; gap: 8px; }
@@ -576,6 +597,7 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
     <section class="voice" id="voicePanel" aria-live="polite" hidden></section>
     <section class="whatsnew" id="whatsNew" aria-labelledby="wnTitle" hidden></section>
     <div class="alerts" id="alerts" hidden></div>
+    <section class="alerts recsug" id="recSug" hidden></section>
     <div class="favs" id="favs" hidden></div>
     <main id="list"></main>
   </div>
@@ -666,6 +688,7 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
       <button class="mi" id="compactBtn" type="button" role="switch" aria-checked="false"></button>
       <button class="mi" id="bigBtn" type="button" role="switch" aria-checked="false"></button>
       <button class="mi" id="awakeBtn" type="button" role="switch" aria-checked="false" hidden></button>
+      <button class="mi" id="recurBtn" type="button"></button>
       <button class="mi" id="backupBtn" type="button"></button>
       <button class="mi" id="aboutBtn" type="button"></button>
     </div>
@@ -674,6 +697,8 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
     <div class="spanel" id="sharePanel" hidden></div>
     <div class="spanel" id="backupBox" hidden></div>
     <div class="spanel about" id="aboutBox" hidden></div>
+    <div class="spanel" id="recurPanel" hidden></div>
+    <div class="spanel" id="recurList" hidden></div>
   </div>
 </dialog>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
@@ -704,6 +729,7 @@ const ICON_PATHS = {
   info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
   check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   rows: '<path d="M4 6h16M4 12h16M4 18h16"/>',
+  repeat: '<path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 0 1 3-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 0 1-3 3H3"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
   menu: '<path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/>',
   chat: '<path d="M21 12a9 9 0 0 1-13.5 7.8L3 21l1.2-4.5A9 9 0 1 1 21 12z"/>',
@@ -731,6 +757,10 @@ function read(k) { try { return localStorage.getItem(k); } catch { return null; 
 let catalog = { products: [], imgBase: "", updated: "" };
 let byId = new Map();
 let wakeLock = null, wakeBusy = false, wakeWanted = loadJSON("keep-awake", true);   // המסך דלוק בזמן קנייה
+let recurring = loadJSON("recurring", []);   // מוצרים חוזרים: {key, pid, name, qty, list, every: "trip"|ימים, last}
+let recDismissed = new Set(loadJSON("recur-dismissed", []));
+const EVERY_TXT = { trip: "בכל קנייה", 7: "כל שבוע", 14: "כל שבועיים", 30: "כל חודש" };
+const EVERY_OPTS = ["trip", 7, 14, 30];
 let loaded = false, loadFailed = false;   // מאגר המחירים נטען / נכשל
 function skeleton(tag = "div") { const el = document.createElement(tag); el.className = "sk"; el.setAttribute("aria-hidden", "true"); el.innerHTML = "<i></i><i></i><i></i><i></i>"; return el; }
 function skeletonGrid(grid, n = 6) { grid.textContent = ""; for (let i = 0; i < n; i++) grid.append(skeleton()); }
@@ -957,6 +987,8 @@ function row(it) {
     if (p.o) meta.textContent += (meta.textContent ? " · " : "") + "מחיר אונליין";
   } else meta.textContent = catalog.products.length ? "פריט חופשי" : "";
   body.append(nm);
+  const rec = !it.done && recOf(it);
+  if (rec) { const t = document.createElement("span"); t.className = "rec-tag"; t.innerHTML = ico("repeat"); t.append(EVERY_TXT[rec.every]); body.append(t); }
   if (meta.textContent) body.append(meta);
   const chg = !it.done && chgTag(p, true); if (chg) body.append(chg);
   li.append(pic, body);
@@ -975,7 +1007,14 @@ function row(it) {
   } else price.append(Object.assign(document.createElement("span"), { className: "na", textContent: "בלי מחיר" }));
   foot.append(price);
   if (it.done) foot.append(Object.assign(document.createElement("span"), { className: "incart", textContent: "בעגלה" }));
-  else foot.append(stepper(it.qty, p, q => setQty(it.id, q)));
+  else {
+    const ctrls = document.createElement("div"); ctrls.className = "ctrls";
+    const rb = document.createElement("button"); rb.type = "button"; rb.className = "rep" + (rec ? " on" : "");
+    rb.innerHTML = ico("repeat"); rb.setAttribute("aria-label", (rec ? "קנייה חוזרת: " + EVERY_TXT[rec.every] + ". שינוי: " : "להפוך לקנייה חוזרת: ") + it.name);
+    rb.onclick = () => openRecurPanel(it);
+    ctrls.append(rb, stepper(it.qty, p, q => setQty(it.id, q)));
+    foot.append(ctrls);
+  }
   li.append(foot);
   const alt = altRow(it, p); if (alt) li.append(alt);
   return li;
@@ -1112,7 +1151,9 @@ function renderList() {
     b.textContent = confirmClear ? "בטוח? לחצו שוב" : "סיימתי קנייה";
     b.onclick = () => {
       if (!confirmClear) { confirmClear = true; renderList(); setTimeout(() => { if (confirmClear) { confirmClear = false; renderList(); } }, 4000); return; }
-      confirmClear = false; const n = done.length; saveTrip(done); items = items.filter(i => !(i.done && listOf(i) === currentList)); save(); renderAll(); toast(`הקנייה נשמרה בהיסטוריה (${n} פריטים)`);
+      confirmClear = false; const n = done.length; saveTrip(done); items = items.filter(i => !(i.done && listOf(i) === currentList));
+      const back = recurAfterTrip(done);
+      save(); renderAll(); toast(`הקנייה נשמרה בהיסטוריה (${n} פריטים)` + (back ? (back === 1 ? " · מוצר חוזר אחד כבר ברשימה הבאה" : ` · ${back} מוצרים חוזרים כבר ברשימה הבאה`) : ""));
     };
     head.append(h, b);
     const ul = document.createElement("ul"); ul.className = "items cartlist"; done.forEach(i => ul.append(row(i)));
@@ -1449,7 +1490,7 @@ function showView(v) {
 }
 for (const [k, n] of Object.entries(VIEWS)) $("tab" + n).onclick = () => showView(k);
 function renderAll() {
-  renderList(); renderFavs(); renderAlerts(); updateWake();
+  renderList(); renderFavs(); renderAlerts(); renderRecSug(); updateWake();
   if (view === "catalog") renderCatalog();
   if (view === "deals") renderDeals();
   if (view === "history") renderHistory();
@@ -1510,6 +1551,123 @@ function renderFavs() {
   } else {
     box.append(Object.assign(document.createElement("p"), { className: "tip", textContent: "טיפ: סמנו כוכב על המוצרים שאתם קונים כל שבוע (במסך המוצרים), ואז תוכלו להוסיף את כולם לרשימה בלחיצה אחת." }));
   }
+}
+
+/* ---------- recurring products: come back to the list by themselves ---------- */
+function recKey(it) { return it.pid != null ? "p" + it.pid : "n:" + it.name; }
+function recOf(it) { return recurring.find(r => r.key === recKey(it)); }
+function recMatch(r, i) { return r.pid != null ? i.pid === r.pid : i.pid == null && i.name === r.name; }
+function saveRecurring() { saveJSON("recurring", recurring); }
+function setRecurring(it, every) {
+  const key = recKey(it);
+  recurring = recurring.filter(r => r.key !== key);
+  if (every != null) recurring.push({ key, pid: it.pid ?? null, name: it.name, qty: it.qty || 1, list: it.list || "main", every, last: Date.now() });
+  saveRecurring();
+}
+// מוסיף את המוצר לרשימה שלו, אם הוא לא כבר שם
+function addRecurringItem(r) {
+  const list = lists.some(l => l.id === r.list) ? r.list : lists[0].id;
+  if (items.some(i => !i.done && listOf(i) === list && recMatch(r, i))) return false;
+  items.push({ id: newId(), list, pid: r.pid, name: r.name, qty: r.qty || 1, done: false, createdAt: Date.now(), doneAt: null });
+  return true;
+}
+// לפי זמן: כשעבר שבוע/שבועיים/חודש מהקנייה האחרונה
+function runRecurring() {
+  const now = Date.now(); let n = 0;
+  for (const r of recurring) if (r.every !== "trip" && now - r.last >= r.every * 864e5) { if (addRecurringItem(r)) n++; r.last = now; }
+  if (!n) return;
+  saveRecurring(); save(); renderAll();
+  toast(n === 1 ? "מוצר חוזר נוסף לרשימה" : `${n} מוצרים חוזרים נוספו לרשימה`);
+}
+// בסיום קנייה: מה שנקנה מתחיל לספור מחדש, ו"בכל קנייה" חוזר מיד לרשימה הבאה
+function recurAfterTrip(done) {
+  const now = Date.now(); let n = 0;
+  for (const r of recurring) {
+    if (done.some(i => recMatch(r, i))) r.last = now;
+    if (r.every === "trip" && (r.list || "main") === currentList && addRecurringItem(r)) n++;
+  }
+  saveRecurring();
+  return n;
+}
+function openRecurPanel(it) {
+  const box = $("recurPanel"); box.textContent = "";
+  const cur = recOf(it);
+  box.append(Object.assign(document.createElement("p"), { textContent: `"${it.name}" יחזור לרשימה לבד, בלי שתצטרכו להוסיף אותו שוב.` }));
+  const opts = document.createElement("div"); opts.className = "ropts"; opts.setAttribute("role", "radiogroup");
+  const choose = every => {
+    setRecurring({ ...it, list: listOf(it) }, every); closeSheet(); renderAll();
+    toast(every == null ? `"${it.name}" כבר לא חוזר` : `"${it.name}" יחזור לרשימה ${EVERY_TXT[every]}`);
+  };
+  for (const e of EVERY_OPTS) {
+    const b = document.createElement("button"); b.type = "button"; b.className = "ropt"; b.setAttribute("role", "radio");
+    b.setAttribute("aria-checked", cur && cur.every === e ? "true" : "false");
+    b.innerHTML = `<span class="dotc"></span><span></span>`; b.children[1].textContent = EVERY_TXT[e];
+    b.onclick = () => choose(e); opts.append(b);
+  }
+  if (cur) { const off = document.createElement("button"); off.type = "button"; off.className = "ropt off"; off.textContent = "לא חוזר יותר"; off.onclick = () => choose(null); opts.append(off); }
+  box.append(opts);
+  sheetShow("recurPanel", "קנייה חוזרת");
+}
+function renderRecurList() {
+  const box = $("recurList"); box.textContent = "";
+  if (!recurring.length) {
+    box.append(Object.assign(document.createElement("p"), { textContent: "אין עדיין מוצרים חוזרים. ברשימה, לחצו על כפתור החץ המסתובב ליד מוצר, ובחרו כל כמה זמן הוא יחזור." }));
+    return;
+  }
+  box.append(Object.assign(document.createElement("p"), { textContent: "המוצרים האלה חוזרים לרשימה לבד. מוצר שעוד לא נגמר בבית – פשוט מוחקים אותו מהרשימה, והוא יחזור בפעם הבאה." }));
+  const list = document.createElement("div"); list.className = "rlist";
+  for (const r of recurring) {
+    const row = document.createElement("div"); row.className = "rrow";
+    const p = r.pid != null ? byId.get(r.pid) : null;
+    const sel = document.createElement("select"); sel.setAttribute("aria-label", "כל כמה זמן: " + r.name);
+    for (const e of EVERY_OPTS) sel.append(new Option(EVERY_TXT[e], String(e), false, String(r.every) === String(e)));
+    sel.onchange = () => { r.every = sel.value === "trip" ? "trip" : +sel.value; saveRecurring(); renderAll(); };
+    const rm = document.createElement("button"); rm.type = "button"; rm.className = "x"; rm.innerHTML = ico("x"); rm.setAttribute("aria-label", "הסרה מהמוצרים החוזרים: " + r.name);
+    rm.onclick = () => { recurring = recurring.filter(x => x !== r); saveRecurring(); renderRecurList(); renderAll(); };
+    row.append(thumb(p, r.name), Object.assign(document.createElement("span"), { className: "n", textContent: r.name }), sel, rm);
+    list.append(row);
+  }
+  box.append(list);
+}
+$("recurBtn").onclick = () => { renderRecurList(); sheetShow("recurList", "מוצרים חוזרים"); };
+// הצעה חכמה: מוצרים שקניתם לפחות 3 פעמים בקצב קבוע
+function recSuggestions() {
+  if (!loaded || history.length < 3) return [];
+  const times = new Map();
+  for (const t of history) for (const pid of new Set(t.items.map(x => x.pid).filter(x => x != null))) { if (!times.has(pid)) times.set(pid, []); times.get(pid).push(t.t); }
+  const out = [];
+  for (const [pid, ts] of times) {
+    if (ts.length < 3 || recDismissed.has("p" + pid) || recurring.some(r => r.key === "p" + pid)) continue;
+    ts.sort((a, b) => a - b);
+    const gaps = ts.slice(1).map((t, i) => (t - ts[i]) / 864e5).sort((a, b) => a - b);
+    const med = gaps[Math.floor(gaps.length / 2)];
+    const every = med <= 10 ? 7 : med <= 20 ? 14 : med <= 40 ? 30 : null;
+    const p = byId.get(pid);
+    if (every && p) out.push({ p, every });
+  }
+  return out.slice(0, 3);
+}
+function renderRecSug() {
+  const box = $("recSug"); box.textContent = "";
+  const sug = recSuggestions();
+  if (!sug.length) { box.hidden = true; return; }
+  box.hidden = false;
+  const hd = document.createElement("div"); hd.className = "hd";
+  const title = document.createElement("strong"); title.innerHTML = ico("repeat"); title.append("נראה שאתם קונים אותם באופן קבוע");
+  const x = document.createElement("button"); x.type = "button"; x.className = "x"; x.innerHTML = ico("x"); x.setAttribute("aria-label", "לא תודה");
+  x.onclick = () => { sug.forEach(s => recDismissed.add("p" + s.p.id)); saveJSON("recur-dismissed", [...recDismissed]); renderRecSug(); };
+  hd.append(title, x); box.append(hd);
+  const rows = document.createElement("div"); rows.className = "rows";
+  for (const { p, every } of sug) {
+    const r = document.createElement("div"); r.className = "arow";
+    const tx = document.createElement("span"); tx.className = "tx";
+    tx.append(Object.assign(document.createElement("b"), { textContent: p.n }), Object.assign(document.createElement("span"), { className: "down", textContent: "להחזיר לרשימה " + EVERY_TXT[every] + "?" }));
+    const go = document.createElement("button"); go.type = "button"; go.className = "go"; go.textContent = "כן";
+    go.setAttribute("aria-label", `להפוך לקנייה חוזרת ${EVERY_TXT[every]}: ${p.n}`);
+    go.onclick = () => { setRecurring({ pid: p.id, name: p.n, qty: 1, list: currentList }, every); renderAll(); toast(`"${p.n}" יחזור לרשימה ${EVERY_TXT[every]}`); };
+    r.append(thumb(p), tx, go); rows.append(r);
+  }
+  box.append(rows);
 }
 
 /* ---------- purchase history ---------- */
@@ -1705,7 +1863,7 @@ function tripEditor(t) {
 }
 
 /* ---------- backup & restore ---------- */
-const BACKUP_KEYS = ["shopping-list-v2", "lists", "cur-list", "favs", "history", "dept-order", "big-text", "closed-groups", "budget", "cat-sort", "seen-deals", "compact-view", "sg-sort", "keep-awake"];
+const BACKUP_KEYS = ["shopping-list-v2", "lists", "cur-list", "favs", "history", "dept-order", "big-text", "closed-groups", "budget", "cat-sort", "seen-deals", "compact-view", "sg-sort", "keep-awake", "recurring", "recur-dismissed"];
 function backupPanel() {
   const panel = document.createElement("div"); panel.className = "panel";
   panel.innerHTML = "<h3>גיבוי ושחזור</h3><p>כל הנתונים (רשימות, קבועים והיסטוריה) שמורים רק בטלפון הזה. כדאי לשמור גיבוי מדי פעם: בקובץים, בדרייב או בהודעה לעצמכם בוואטסאפ.</p>";
@@ -1911,7 +2069,7 @@ $("dealsForm").addEventListener("submit", e => { e.preventDefault(); $("dealsInp
 $("dealsMore").onclick = () => { dealsShown += 40; renderDeals(); };
 
 /* ---------- settings sheet ---------- */
-const SHEET_PANELS = ["sheetMenu", "listPanel", "orderPanel", "sharePanel", "backupBox", "aboutBox"];
+const SHEET_PANELS = ["sheetMenu", "listPanel", "orderPanel", "sharePanel", "backupBox", "aboutBox", "recurPanel", "recurList"];
 function menuItem(btn, icon, label, end = ico("chev", "ico chev")) {
   btn.innerHTML = ico(icon) + `<span class="lbl"></span>` + end;
   btn.querySelector(".lbl").textContent = label;
@@ -1921,6 +2079,7 @@ menuItem($("orderBtn"), "sort", "סדר המחלקות בסניף");
 menuItem($("compactBtn"), "rows", "תצוגה צפופה (שורה לכל מוצר)", '<span class="switch" aria-hidden="true"></span>');
 menuItem($("bigBtn"), "text", "טקסט גדול", '<span class="switch" aria-hidden="true"></span>');
 menuItem($("awakeBtn"), "sun", "המסך נשאר דלוק בזמן קנייה", '<span class="switch" aria-hidden="true"></span>');
+menuItem($("recurBtn"), "repeat", "מוצרים חוזרים");
 menuItem($("backupBtn"), "save", "גיבוי ושחזור");
 menuItem($("aboutBtn"), "info", "אודות ומקור המחירים");
 function sheetShow(id, title) {
@@ -1986,6 +2145,7 @@ async function updateWake() {
 }
 // הטלפון משחרר את הנעילה כשיוצאים מהאפליקציה, אז מבקשים שוב כשחוזרים
 document.addEventListener("visibilitychange", updateWake);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") runRecurring(); });
 if ("wakeLock" in navigator) {
   $("awakeBtn").hidden = false;
   $("awakeBtn").setAttribute("aria-checked", wakeWanted ? "true" : "false");
@@ -2280,7 +2440,7 @@ function applyCatalog(d) {
     $("sub").textContent = `רמי לוי · מחירים מעודכנים ל-${d.updated}`;
     $("note").textContent = `${d.products.length.toLocaleString("he-IL")} מוצרים במאגר · המחירים מאתר הרשת ועשויים להיות שונים מעט מהמחיר בסניף`;
   }
-  renderDepts(); renderAll();
+  renderDepts(); renderAll(); runRecurring();
 }
 function loadCatalog() {
   loadFailed = false; renderAll();
