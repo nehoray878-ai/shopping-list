@@ -6,7 +6,7 @@
 <title>רשימת הקניות</title>
 <meta name="description" content="רשימת קניות עם המחירים והמבצעים של סניף רמי לוי">
 <meta name="theme-color" content="#1E5A3C">
-<meta name="app-version" content="2.7">
+<meta name="app-version" content="2.8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="קניות">
@@ -320,8 +320,23 @@ ul.items { list-style: none; margin: 0; padding: 0; display: grid; grid-template
   scroll-padding-inline: max(18px, env(safe-area-inset-right, 0px));
 }
 .slider::-webkit-scrollbar { display: none; }
-.slider > .card { flex: 0 0 156px; scroll-snap-align: start; }
-html.big .slider > .card { flex-basis: 180px; }
+.slider > .dcol { flex: 0 0 86%; max-width: 380px; display: flex; flex-direction: column; gap: 6px; scroll-snap-align: start; }
+.dlist { display: flex; flex-direction: column; gap: 6px; }
+.dlist .sk, .dlist .empty { width: 100%; }
+.drow { background: var(--surface); border-radius: 14px; padding: 8px 10px 8px 8px; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; column-gap: 10px; align-items: center; min-height: 72px; }
+.drow.inlist { box-shadow: inset 0 0 0 2px var(--brand); }
+.drow .thumb { width: 52px; height: 52px; padding: 3px; border-radius: 12px; }
+.drow .thumb.ph { font-size: 1.2rem; padding: 0; }
+.drow .col { display: flex; flex-direction: column; gap: 3px; min-width: 0; align-items: flex-start; }
+.drow .nm { font-size: 0.9rem; font-weight: 500; line-height: 1.25; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+.drow .promo { padding: 2px 7px; font-size: 0.72rem; border-radius: 8px; }
+.drow .end { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.drow .price { align-items: flex-end; }
+.drow .price b { font-size: 1rem; }
+.drow .price small { font-weight: 400; font-size: 0.7rem; color: var(--muted); }
+.drow .add { width: 38px; height: 38px; border-radius: 11px; border: 0; background: var(--ink); color: var(--ink-accent); display: grid; place-items: center; padding: 0; }
+.drow .stepper button { width: 30px; height: 34px; }
+html.big .drow .thumb { width: 60px; height: 60px; }
 .dback { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .dback h3 { margin: 0; font-size: 1.1rem; font-weight: 800; }
 
@@ -603,7 +618,7 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
     </form>
     <div class="resinfo" id="dealsInfo"></div>
     <div class="stack" id="dealsSliders"></div>
-    <div class="grid" id="dealsGrid"></div>
+    <div class="dlist" id="dealsGrid"></div>
     <button class="btn more" id="dealsMore" type="button" hidden>הצגת עוד מבצעים</button>
   </div>
 
@@ -1757,9 +1772,39 @@ function renderAlerts() {
   }
 }
 let dealsDept = "";   // מחלקה שנבחרה ב"לכל המבצעים"
+// מבצע כשורה קטנה (כמו ברשימה): תמונה, שם, תווית מבצע, מחיר וכפתור הוספה
+function dealRow(p) {
+  const it = inList(p.id);
+  const r = document.createElement("div"); r.className = "drow" + (it ? " inlist" : "");
+  const deal = p.pr && p.pr.q === 1 && !p.pr.m ? p.pr : null;
+  const col = document.createElement("div"); col.className = "col";
+  col.append(Object.assign(document.createElement("span"), { className: "nm", textContent: p.n }));
+  const tag = promoTag(p, it ? it.qty : null, !!deal); if (tag) col.append(tag);
+  const end = document.createElement("div"); end.className = "end";
+  const price = document.createElement("span"); price.className = "price";
+  const b = document.createElement("b"); b.textContent = fmt(deal ? deal.x : p.p);
+  if (p.k) b.append(Object.assign(document.createElement("small"), { textContent: " לק\"ג" }));
+  price.append(b);
+  if (deal) price.append(Object.assign(document.createElement("s"), { textContent: fmt(p.p) }));
+  end.append(price);
+  if (it) end.append(stepper(it.qty, p, q => setQty(it.id, q)));
+  else {
+    const add = document.createElement("button"); add.type = "button"; add.className = "add";
+    add.innerHTML = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+    add.setAttribute("aria-label", "הוספה לרשימה: " + p.n); add.onclick = () => addProduct(p);
+    end.append(add);
+  }
+  r.append(thumb(p), col, end);
+  return r;
+}
+// סליידר: עמודות של 3 שורות, והעמודה הבאה מציצה מהצד
 function slider(key, products) {
   const row = document.createElement("div"); row.className = "slider"; row.dataset.k = key;
-  products.forEach(p => row.append(cardFor(p)));
+  for (let i = 0; i < products.length; i += 3) {
+    const c = document.createElement("div"); c.className = "dcol";
+    products.slice(i, i + 3).forEach(p => c.append(dealRow(p)));
+    row.append(c);
+  }
   return row;
 }
 function renderDeals() {
@@ -1817,7 +1862,7 @@ function renderDeals() {
     back.append(b); sl.append(back);
   }
   $("dealsInfo").textContent = `${list.length.toLocaleString("he-IL")} מוצרים במבצע` + (q ? "" : " · מהמשתלמים ביותר");
-  list.slice(0, dealsShown).forEach(p => g.append(cardFor(p)));
+  list.slice(0, dealsShown).forEach(p => g.append(dealRow(p)));
   $("dealsMore").hidden = list.length <= dealsShown;
 }
 let dealsTimer;
