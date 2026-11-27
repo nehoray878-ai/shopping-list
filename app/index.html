@@ -7,7 +7,7 @@
 <title>רשימת הקניות</title>
 <meta name="description" content="רשימת קניות עם המחירים והמבצעים של הסניף שלך: רמי לוי, שופרסל, ויקטורי, יוחננוף, אושר עד וקרפור">
 <meta name="theme-color" content="#1E5A3C">
-<meta name="app-version" content="4.2">
+<meta name="app-version" content="4.3">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="קניות">
@@ -412,12 +412,16 @@ html.big .drow .thumb { width: 60px; height: 60px; }
   background: var(--bg); color: var(--fg); border-radius: 26px 26px 0 0; overflow: hidden;
 }
 .sheet::backdrop { background: rgb(0 0 0 / .45); }
+@supports (height: 1dvh) { .sheet { max-height: 88dvh; } }
+html.sheet-open, html.sheet-open body { overflow: hidden; overscroll-behavior: none; }
 .sheet[open] { display: flex; flex-direction: column; animation: up .22s ease-out; }
 @keyframes up { from { transform: translateY(40px); opacity: 0; } }
-.sheet-hd { display: flex; align-items: center; gap: 6px; padding: 12px 12px 6px 12px; }
+.sheet-hd { flex: none; display: flex; align-items: center; gap: 6px; padding: 12px 12px 6px 12px; }
 .sheet-hd h2:focus { outline: none; }
 .sheet-hd h2 { flex: 1; margin: 0; font-size: 1.2rem; font-weight: 800; padding-inline-start: 6px; }
-.sheet-body { overflow-y: auto; padding: 6px 16px calc(20px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 10px; }
+/* min-height: 0 – בלי זה החלק הפנימי לא מתכווץ ולכן לא נגלל; overscroll – הגלילה לא עוברת לרשימה שמאחור */
+.sheet-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; padding: 6px 16px calc(20px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; gap: 10px; }
+.sheet-body > * { flex-shrink: 0; }   /* התפריט לא נמעך לגובה החלון – הוא נגלל */
 .spanel { display: flex; flex-direction: column; gap: 12px; }
 .spanel > p { margin: 0; color: var(--muted); font-size: 0.9rem; }
 .spanel .err { color: var(--danger); font-size: 0.88rem; }
@@ -2199,6 +2203,8 @@ function sheetShow(id, title) {
   d.querySelector(".sheet-body").scrollTop = 0;
 }
 function closeSheet() { const d = $("sheet"); if (d.open) d.close(); }
+// כשהחלון פתוח, הרשימה שמאחור לא זזה
+new MutationObserver(() => document.documentElement.classList.toggle("sheet-open", $("sheet").open)).observe($("sheet"), { attributes: true, attributeFilter: ["open"] });
 const openMenu = () => sheetShow("sheetMenu", "הגדרות ועוד");
 $("menuBtn").onclick = openMenu;
 $("sheetBack").onclick = openMenu;
@@ -2948,28 +2954,30 @@ function showGate(msg, err) {
   $("gate").hidden = false;
   $("gateTxt").textContent = msg || "כדי להיכנס, כתבו את כתובת המייל שלכם.";
   $("gateErr").textContent = err || "";
-  $("gateBtn").disabled = false;
+  resetGateBtn();
   $("gateForm").hidden = false;
 }
 const validEmail = e => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
-// כניסה: מקלידים מייל וזהו. ברקע נוצר חשבון אורח אנונימי (בלי שום מסך אישור) והמייל נשמר אצל המנהל
-$("gateForm").onsubmit = async e => {
+// כניסה: מקלידים מייל וזהו – האפליקציה נפתחת מיד. ברקע נוצר חשבון אורח אנונימי (בלי שום מסך אישור),
+// המייל נרשם אצל המנהל ונבדק אם הוא חסום (אם כן – מסך "אין לך גישה" מופיע שנייה אחרי)
+$("gateForm").onsubmit = e => {
   e.preventDefault();
   const email = $("gateEmail").value.trim().toLowerCase();
   if (!validEmail(email)) { $("gateErr").textContent = "כתובת המייל לא נראית תקינה. בדקו ונסו שוב."; return; }
-  $("gateBtn").disabled = true; $("gateErr").textContent = "";
-  try {
-    await ensureFirebase();
-    store("auth-email", email);
-    const cur = firebase.auth().currentUser;
-    if (cur) await onUser(cur); else await firebase.auth().signInAnonymously();
-  } catch (err) {
-    console.warn("sign-in", err);
-    $("gateErr").textContent = err && err.code === "auth/network-request-failed" ? "אין חיבור לאינטרנט. נסו שוב." : "הכניסה לא הצליחה. נסו שוב בעוד רגע.";
-    $("gateBtn").disabled = false;
-  }
+  $("gateErr").textContent = ""; $("gateBtn").disabled = true; $("gateBtn").textContent = "נכנסים…";
+  store("auth-email", email);
+  startApp();
+  connectAuth();
 };
+// מחבר את חשבון האורח ברקע (גם בלי אינטרנט האפליקציה עובדת; הרישום יקרה בפעם הבאה שיש חיבור)
+function connectAuth() {
+  ensureFirebase().then(() => {
+    const cur = firebase.auth().currentUser;
+    if (cur) onUser(cur); else return firebase.auth().signInAnonymously();
+  }).catch(e => console.warn("sign-in (will retry next open)", e));
+}
 $("gateOut").onclick = () => { store("auth-email", null); $("gateOut").hidden = true; $("gateEmail").value = ""; showGate(); };
+function resetGateBtn() { $("gateBtn").disabled = false; $("gateBtn").textContent = "כניסה"; }
 
 // כניסה נרשמת אצל המנהל: רק המייל ומתי (וגרסת האפליקציה, לתמיכה טכנית). לא שם, לא סניף ולא שום דבר מהרשימה
 async function recordVisit(u, email) {
@@ -2989,27 +2997,29 @@ async function recordVisit(u, email) {
 }
 async function onUser(u) {
   me = u;
-  if (!u) { if (startedApp) location.reload(); else showGate(); return; }
+  if (!u) {
+    if (read("auth-email")) { connectAuth(); return; }   // כבר הקליד מייל – רק מחברים שוב ברקע
+    if (startedApp) location.reload(); else showGate(); return;
+  }
   const email = myEmail();
   if (!email) { showGate(); return; }            // חשבון אורח בלי מייל: מבקשים את המייל
   store("auth-uid", u.uid);
+  $("adminBtn").hidden = !isAdmin();
+  $("accountBtn").hidden = false;
+  menuItem($("accountBtn"), "info", `מחובר/ת: ${email}`, '<span class="vsub" style="color:var(--muted);font-size:.85rem">יציאה</span>');
+  startApp();
   const ok = await recordVisit(u, email);
   if (!ok) {
     pickerFirst = false; closeSheet();
     $("gateForm").hidden = true; $("gateOut").hidden = false;
     $("gate").hidden = false; $("gateErr").textContent = "";
     $("gateTxt").textContent = "אין לך גישה לאפליקציה. אם זו טעות, פנו למי ששלח לכם אותה.";
-    return;
   }
-  $("adminBtn").hidden = !isAdmin();
-  $("accountBtn").hidden = false;
-  menuItem($("accountBtn"), "info", `מחובר/ת: ${email}`, '<span class="vsub" style="color:var(--muted);font-size:.85rem">יציאה</span>');
-  startApp();
 }
 function initAuth() {
   if (!FIREBASE_CONFIG) { startApp(); return; }
   // מי שכבר נכנס בטלפון הזה נכנס מיד, גם בלי אינטרנט בסופר
-  if (read("auth-uid") && read("auth-email")) startApp(); else showGate("רגע…");
+  if (read("auth-email")) startApp(); else showGate();
   ensureFirebase().then(() => {
     firebase.auth().getRedirectResult().catch(() => {});
     firebase.auth().onAuthStateChanged(onUser);
