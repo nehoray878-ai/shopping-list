@@ -6,7 +6,7 @@
 <title>רשימת הקניות</title>
 <meta name="description" content="רשימת קניות עם המחירים והמבצעים של סניף רמי לוי">
 <meta name="theme-color" content="#1E5A3C">
-<meta name="app-version" content="2.9">
+<meta name="app-version" content="3.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="קניות">
@@ -140,11 +140,6 @@ img { max-width: 100%; }
 .voice .hd { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
 .voice .hd strong { font-weight: 800; font-size: 1rem; }
 .voice .heard { color: var(--muted); font-size: 0.9rem; margin: 0; }
-.vrows { display: flex; flex-direction: column; gap: 6px; }
-.vrow { display: flex; align-items: center; gap: 6px; }
-.vrow .qn { font-weight: 800; min-width: 30px; text-align: center; font-variant-numeric: tabular-nums; }
-.vrow select { flex: 1; min-width: 0; font: inherit; font-size: 0.95rem; padding: 9px 10px; border: 2px solid var(--line); border-radius: 12px; background: var(--bg); color: var(--fg); }
-.voice .acts { display: flex; gap: 8px; flex-wrap: wrap; }
 .search .clear { border: 0; background: transparent; color: var(--muted); width: 36px; height: 36px; display: grid; place-items: center; padding: 0; }
 .suggest {
   position: absolute; inset-inline: 0; top: calc(100% + 4px); background: var(--surface);
@@ -159,6 +154,10 @@ img { max-width: 100%; }
 .sg .pr { font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .sg.free .nm { color: var(--brand); font-weight: 700; }
 .sg .u { font-size: 0.78rem; color: var(--down); font-weight: 700; font-variant-numeric: tabular-nums; }
+.vhead { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: var(--promo-bg); color: var(--promo-fg); border-bottom: 1px solid var(--line); }
+.vhead .t { flex: 1; font-weight: 800; font-size: 0.92rem; }
+.vhead .stepper .q { min-width: 54px; }
+.vhead .skip { border: 0; background: transparent; color: var(--promo-fg); font: inherit; font-weight: 800; font-size: 0.9rem; padding: 8px 6px; min-height: 38px; }
 .sgsort { position: sticky; top: 0; z-index: 1; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; padding: 8px 10px; background: var(--surface); border-bottom: 1px solid var(--line); }
 .sgsort::-webkit-scrollbar { display: none; }
 .sgsort .dchip { min-height: 36px; padding: 6px 11px; font-size: 0.84rem; }
@@ -1173,42 +1172,33 @@ function voiceOptions(name, limit = 6) {
   };
   return [...pool.values()].sort((a, b) => score(b) - score(a)).slice(0, limit);
 }
-function renderVoice(heard, parsed) {
+// בזמן ההקשבה: מה שנשמע עד עכשיו
+function renderVoice(heard) {
   const box = $("voicePanel"); box.textContent = ""; box.hidden = false;
   const hd = document.createElement("div"); hd.className = "hd";
-  hd.append(Object.assign(document.createElement("strong"), { textContent: parsed ? "להוסיף לרשימה?" : "מקשיב… דברו עכשיו" }));
+  hd.append(Object.assign(document.createElement("strong"), { textContent: "מקשיב… דברו עכשיו" }));
   const x = document.createElement("button"); x.type = "button"; x.className = "x"; x.innerHTML = ico("x"); x.setAttribute("aria-label", "ביטול");
   x.onclick = () => { stopVoice(); box.hidden = true; };
   hd.append(x); box.append(hd);
-  box.append(Object.assign(document.createElement("p"), { className: "heard", textContent: heard ? `שמעתי: "${heard}"` : "למשל: חלב, שני לחם וביצים" }));
-  if (!parsed) return;
-  if (!parsed.length) { box.append(Object.assign(document.createElement("p"), { className: "heard", textContent: "לא זיהיתי מוצרים. נסו שוב." })); return; }
-  const rows = document.createElement("div"); rows.className = "vrows";
-  const picks = parsed.map(it => {
-    const opts = voiceOptions(it.name);
-    const row = document.createElement("div"); row.className = "vrow";
-    const sel = document.createElement("select"); sel.setAttribute("aria-label", "המוצר עבור " + it.name);
-    opts.forEach(p => sel.append(new Option(`${p.n} · ${fmt(p.p)}`, p.id)));
-    sel.append(new Option(`"${it.name}" בלי לבחור מוצר`, ""));
-    const q = Object.assign(document.createElement("span"), { className: "qn", textContent: "×" + it.qty });
-    const rm = document.createElement("button"); rm.type = "button"; rm.className = "x"; rm.innerHTML = ico("x"); rm.setAttribute("aria-label", "הסרה: " + it.name);
-    const pick = { it, sel, row, on: true };
-    rm.onclick = () => { pick.on = false; row.remove(); };
-    row.append(q, sel, rm); rows.append(row);
-    return pick;
-  });
-  const acts = document.createElement("div"); acts.className = "acts";
-  const ok = document.createElement("button"); ok.type = "button"; ok.className = "btn"; ok.textContent = "הוספת הכול";
-  ok.onclick = () => {
-    const chosen = picks.filter(p => p.on); let n = 0;
-    for (const p of chosen) { const prod = p.sel.value ? byId.get(+p.sel.value) : null; if (prod) addProduct(prod, p.it.qty); else addFree(p.it.name); n++; }
-    box.hidden = true; if (n) toast(`נוספו ${n} מוצרים לרשימה`);
-  };
-  const again = document.createElement("button"); again.type = "button"; again.className = "btn ghost"; again.textContent = "לדבר שוב";
-  again.onclick = startVoice;
-  acts.append(ok, again);
-  box.append(rows, acts);
+  box.append(Object.assign(document.createElement("p"), { className: "heard", textContent: heard ? `שמעתי: "${heard}"` : "למשל: חלב, או כמה מוצרים: חלב, שני לחם ועגבניות" }));
 }
+// כמה מוצרים בבת אחת: מציגים את האפשרויות של כל מוצר בתורו ("מוצר 2 מתוך 3")
+let voiceQueue = [], voiceTotal = 0, voiceIndex = 0, voiceAdded = 0;
+function startVoiceQueue(parsed) {
+  if (!parsed.length) { toast("לא זיהיתי מוצרים. נסו שוב"); return; }
+  voiceQueue = parsed.slice(); voiceTotal = parsed.length; voiceIndex = 0; voiceAdded = 0;
+  nextVoice();
+}
+function nextVoice() {
+  if (!voiceQueue.length) { finishVoice(); return; }
+  voiceIndex++; voiceSearch(voiceQueue.shift());
+}
+function finishVoice() {
+  if (voiceTotal > 1 && voiceAdded) toast(`נוספו ${voiceAdded} מוצרים לרשימה`);
+  voiceQueue = []; voiceTotal = 0;
+  clearAdd();
+}
+function cancelVoice() { voiceQueue = []; voiceTotal = 0; }
 // אמרו מוצר אחד ("חלב"): פותחים את כל האפשרויות שלו לבחירה, עם המיון
 function voiceSearch(it) {
   $("voicePanel").hidden = true;
@@ -1229,7 +1219,7 @@ function startVoice() {
   rec.onresult = e => {
     let interim = ""; finalText = "";
     for (const r of e.results) (r.isFinal ? (finalText += r[0].transcript + " ") : (interim += r[0].transcript));
-    renderVoice((finalText + interim).trim(), null);
+    renderVoice((finalText + interim).trim());
   };
   rec.onerror = e => {
     const msg = e.error === "not-allowed" || e.error === "service-not-allowed" ? "צריך לאשר לאפליקציה גישה למיקרופון (בהגדרות הטלפון)"
@@ -1239,11 +1229,11 @@ function startVoice() {
   };
   rec.onend = () => {
     const text = finalText.trim(); stopVoice();
-    if (text) { const parsed = parseSpoken(text); if (parsed.length === 1) voiceSearch(parsed[0]); else renderVoice(text, parsed); }
-    else if (!$("voicePanel").hidden && $("voicePanel").querySelector(".vrows") == null) $("voicePanel").hidden = true;
+    if (text) startVoiceQueue(parseSpoken(text));
+    else $("voicePanel").hidden = true;
   };
   $("micBtn").classList.add("on"); $("micBtn").setAttribute("aria-pressed", "true");
-  renderVoice("", null);
+  renderVoice("");
   try { rec.start(); } catch (err) { console.warn(err); stopVoice(); toast("לא הצלחנו להפעיל את המיקרופון"); }
 }
 if (SpeechRec) { $("micBtn").hidden = false; $("micBtn").onclick = startVoice; }
@@ -1276,6 +1266,22 @@ function renderSuggest() {
     : sgFromVoice ? voiceOptions(q, lim)            // מקול: המוצר הבסיסי ומה שקניתם קודם – ראשונים
     : search(q, "", lim);
   box.textContent = "";
+  if (sgFromVoice) {
+    const vh = document.createElement("div"); vh.className = "vhead";
+    vh.append(Object.assign(document.createElement("span"), { className: "t", textContent: voiceTotal > 1 ? `מוצר ${voiceIndex} מתוך ${voiceTotal}` : "בחרו מוצר" }));
+    const qty = document.createElement("div"); qty.className = "stepper"; qty.setAttribute("role", "group"); qty.setAttribute("aria-label", "כמות");
+    qty.innerHTML = `<button type="button" aria-label="הפחתת כמות">−</button><span class="q"></span><button type="button" aria-label="הוספת כמות">+</button>`;
+    qty.children[1].textContent = "כמות " + sgQty;
+    qty.children[0].onclick = () => { sgQty = Math.max(1, sgQty - 1); renderSuggest(); };
+    qty.children[2].onclick = () => { sgQty = Math.min(99, sgQty + 1); renderSuggest(); };
+    vh.append(qty);
+    if (voiceTotal > 1) {
+      const skip = document.createElement("button"); skip.type = "button"; skip.className = "skip"; skip.textContent = voiceQueue.length ? "דלג" : "סיום";
+      skip.onclick = nextVoice; vh.append(skip);
+    }
+    vh.querySelectorAll("button").forEach(b => b.onmousedown = e => e.preventDefault());
+    box.append(vh);
+  }
   if (catalog.products.length) {
     const bar = document.createElement("div"); bar.className = "sgsort"; bar.setAttribute("role", "group"); bar.setAttribute("aria-label", "מיון התוצאות");
     for (const [val, label] of SG_SORTS) {
@@ -1297,25 +1303,37 @@ function renderSuggest() {
     const pr = document.createElement("span"); pr.className = "pr"; pr.textContent = fmt(sgSort ? effPrice(p) : p.p);
     b.append(thumb(p), col, pr);
     b.onmousedown = e => e.preventDefault();
-    b.onclick = () => { addProduct(p, sgQty); clearAdd(); };
+    b.onclick = () => { addProduct(p, sgQty); afterPick(); };
     box.append(b);
   });
   const f = document.createElement("button"); f.type = "button"; f.className = "sg free";
   f.append(placeholder("+"), Object.assign(document.createElement("span"), { className: "nm" }));
   f.querySelector(".nm").textContent = `הוסף "${q.trim()}" בלי לבחור מוצר`;
   f.onmousedown = e => e.preventDefault();
-  f.onclick = () => { addFree(q); clearAdd(); };
+  f.onclick = () => { addFree(q); afterPick(); };
   box.append(f);
   box.hidden = false;
+}
+// אחרי בחירה: במצב קול עוברים למוצר הבא שנאמר
+function afterPick() {
+  if (sgFromVoice && voiceTotal) { voiceAdded++; if (voiceQueue.length) { nextVoice(); return; } finishVoice(); return; }
+  clearAdd();
 }
 function clearAdd() {
   const voice = sgFromVoice;
   $("addInput").value = ""; sgIndex = -1; sgFromVoice = false; sgQty = 1; renderSuggest();
   if (!voice) $("addInput").focus();   // אחרי בחירה מקול לא פותחים מקלדת
 }
-$("addInput").addEventListener("input", () => { sgIndex = -1; sgFromVoice = false; sgQty = 1; renderSuggest(); });
+$("addInput").addEventListener("input", () => { sgIndex = -1; sgFromVoice = false; sgQty = 1; cancelVoice(); renderSuggest(); });
 // רשימת האפשרויות שנפתחה מקול נסגרת בלחיצה מחוץ לה
-document.addEventListener("click", e => { if (sgFromVoice && !$("suggest").hidden && !e.target.closest(".addwrap")) { $("suggest").hidden = true; } });
+document.addEventListener("click", e => {
+  // e.target.isConnected: לחיצה על אפשרות שכבר הוחלפה ברשימה החדשה היא לא לחיצה "בחוץ"
+  if (sgFromVoice && !$("suggest").hidden && e.target.isConnected && !e.target.closest(".addwrap")) {
+    $("suggest").hidden = true;
+    if (voiceQueue.length) toast(`ההוספה בקול הופסקה (${voiceQueue.length === 1 ? "מוצר אחד לא נוסף" : voiceQueue.length + " מוצרים לא נוספו"})`);
+    cancelVoice();
+  }
+});
 $("addInput").addEventListener("blur", () => setTimeout(() => $("suggest").hidden = true, 150));
 $("addInput").addEventListener("focus", renderSuggest);
 $("addInput").addEventListener("keydown", e => {
