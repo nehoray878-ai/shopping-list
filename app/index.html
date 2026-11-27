@@ -6,6 +6,7 @@
 <title>רשימת הקניות</title>
 <meta name="description" content="רשימת קניות עם המחירים והמבצעים של סניף רמי לוי">
 <meta name="theme-color" content="#1E5A3C">
+<meta name="app-version" content="2.1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="קניות">
@@ -608,7 +609,8 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
 const $ = id => document.getElementById(id);
 const LS_KEY = "shopping-list-v2";
 const fmt = n => "₪" + n.toFixed(2);
-const APP_VERSION = "2.0";
+const APP_VERSION = document.querySelector('meta[name="app-version"]').content;   // לעדכן ב-<head> בכל גרסה
+const WHATS_NEW_ID = "2.0";   // לשנות רק כשיש כרטיס "מה חדש" חדש להציג
 
 /* ---------- icons (one stroke style everywhere, instead of emoji) ---------- */
 const ICON_PATHS = {
@@ -1658,11 +1660,11 @@ $("waBtn").onclick = () => {
 
 /* ---------- toast ---------- */
 let tt;
-function toast(msg, label, fn) {
+function toast(msg, label, fn, ms = 3500) {
   const t = $("toast"); t.textContent = "";
   t.append(Object.assign(document.createElement("span"), { textContent: msg }));
   if (label) { const b = document.createElement("button"); b.type = "button"; b.textContent = label; b.onclick = () => { fn(); t.hidden = true; }; t.append(b); }
-  t.hidden = false; clearTimeout(tt); tt = setTimeout(() => t.hidden = true, 3500);
+  t.hidden = false; clearTimeout(tt); tt = setTimeout(() => t.hidden = true, ms);
 }
 
 /* ---------- install to home screen ---------- */
@@ -1681,7 +1683,25 @@ addEventListener("beforeinstallprompt", e => {
 });
 $("installBtn").onclick = async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; $("install").hidden = true; };
 $("installX").onclick = () => { $("install").hidden = true; store("install-dismissed", "1"); };
-if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+/* ---------- updates: when the app comes back to the screen, check for a new version ---------- */
+let swReg = null, updateShown = false, lastCheck = Date.now();
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").then(r => { swReg = r; }).catch(err => console.warn("service worker", err));
+function offerUpdate() {
+  if (updateShown) return; updateShown = true; setTimeout(() => { updateShown = false; }, 30000);
+  toast("יש גרסה חדשה של האפליקציה", "לרענן", () => location.reload(), 30000);
+}
+async function checkForUpdate() {
+  lastCheck = Date.now();
+  try {
+    if (swReg) swReg.update().catch(() => {});
+    const html = await fetch("index.html", { cache: "no-cache" }).then(r => r.ok ? r.text() : "");
+    const m = html.match(/<meta name="app-version" content="([^"]+)"/);
+    if (m && m[1] !== APP_VERSION) offerUpdate();
+  } catch {}
+}
+// באייפון האפליקציה ממשיכה מהרקע בלי להיטען מחדש, אז בודקים כשחוזרים אליה (לכל היותר פעם בדקה)
+setTimeout(checkForUpdate, 8000);
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && Date.now() - lastCheck > 60000) checkForUpdate(); });
 
 
 /* ---------- shared list (Firebase) ---------- */
@@ -1868,9 +1888,9 @@ $("listEdit").onclick = () => openListPanel("edit");
 
 /* ---------- what's new: once per version, only for people who used the previous version ---------- */
 function renderWhatsNew() {
-  if (read("whats-new") === APP_VERSION) return;
+  if (read("whats-new") === WHATS_NEW_ID) return;
   const veteran = read(LS_KEY) != null || read("history") != null || read("favs") != null;
-  if (!veteran) { store("whats-new", APP_VERSION); return; }
+  if (!veteran) { store("whats-new", WHATS_NEW_ID); return; }
   const box = $("whatsNew");
   box.innerHTML = `<div class="wn-hd"><span class="wn-badge">חדש</span><h2 id="wnTitle">האפליקציה קיבלה עיצוב חדש</h2></div>
     <ul>
@@ -1880,7 +1900,7 @@ function renderWhatsNew() {
       <li>הרשימות, הקבועים וההיסטוריה שלכם נשארו בדיוק כמו שהיו.</li>
     </ul>
     <div class="acts"><button class="btn" type="button" data-a="ok">הבנתי, תודה</button><button class="btn ghost" type="button" data-a="compact">לעבור לתצוגה צפופה</button></div>`;
-  const done = () => { store("whats-new", APP_VERSION); box.hidden = true; };
+  const done = () => { store("whats-new", WHATS_NEW_ID); box.hidden = true; };
   box.querySelector('[data-a="ok"]').onclick = done;
   box.querySelector('[data-a="compact"]').onclick = () => { saveJSON("compact-view", true); applyCompact(true); done(); toast("עברנו לתצוגה צפופה. אפשר לשנות בהגדרות."); };
   box.hidden = false;

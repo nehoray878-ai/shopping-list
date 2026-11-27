@@ -1,6 +1,6 @@
 // שומר את האפליקציה במכשיר כדי שתיפתח מהר וגם בלי אינטרנט בסופר.
 // כשמעלים גרסה חדשה: מעלים את VERSION, והטלפונים יתעדכנו בפתיחה הבאה.
-const VERSION = "v14";
+const VERSION = "v15";
 const SHELL = "shell-" + VERSION;
 const DATA = "data-v1";       // הקטלוג: לא נמחק בין גרסאות, כדי שתמיד יהיו מחירים
 const IMG = "img-v1";
@@ -35,10 +35,11 @@ self.addEventListener("fetch", e => {
   e.respondWith(networkFirst(req));
 });
 
-// הדף עצמו: קודם מהרשת (כך גרסה חדשה מגיעה מיד), ואם הרשת איטית או אין חיבור – מהזיכרון
+// הדף עצמו: קודם מהרשת (כך גרסה חדשה מגיעה מיד), ואם הרשת איטית או אין חיבור – מהזיכרון.
+// no-cache: תמיד שואלים את השרת אם יש גרסה חדשה (בדיקה קטנה), במקום לחכות 10 דקות של GitHub
 async function networkFirst(req) {
   const cache = await caches.open(SHELL);
-  const net = fetch(req).then(res => { if (res.ok) cache.put(req, res.clone()); return res; });
+  const net = fetch(req.url, { cache: "no-cache", credentials: "same-origin" }).then(res => { if (res.ok) cache.put(req, res.clone()); return res; });
   net.catch(() => {});
   const timeout = new Promise(r => setTimeout(r, PAGE_TIMEOUT));
   try {
