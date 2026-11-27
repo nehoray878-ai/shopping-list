@@ -7,7 +7,7 @@
 <title>רשימת הקניות</title>
 <meta name="description" content="רשימת קניות עם המחירים והמבצעים של הסניף שלך: רמי לוי, שופרסל, ויקטורי, יוחננוף, אושר עד וקרפור">
 <meta name="theme-color" content="#1E5A3C">
-<meta name="app-version" content="4.0">
+<meta name="app-version" content="4.1">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="קניות">
@@ -100,6 +100,9 @@ img { max-width: 100%; }
 }
 .budline b { font-variant-numeric: tabular-nums; }
 .budline .over { color: #FFD0C7; font-weight: 700; }
+.cmpline { margin-top: 6px; width: 100%; }
+.cmpline .ico { width: 18px; height: 18px; flex: none; }
+.cmpline .go { display: inline-flex; align-items: center; gap: 2px; font-weight: 700; }
 
 /* ===== layout ===== */
 .wrap {
@@ -450,6 +453,28 @@ html.big .drow .thumb { width: 60px; height: 60px; }
 .welcome { background: var(--surface); border-radius: var(--r-lg); padding: 14px 16px; }
 .welcome b { display: block; font-size: 1.05rem; font-weight: 800; margin-bottom: 2px; }
 .welcome span { color: var(--muted); font-size: 0.9rem; }
+/* basket comparison */
+.cmpsum { background: var(--surface); border-radius: var(--r-lg); padding: 12px 14px; font-size: 0.9rem; color: var(--muted); }
+.cmpsum b { color: var(--fg); }
+.cmplist { background: var(--surface); border-radius: var(--r-lg); overflow: hidden; display: flex; flex-direction: column; }
+.cmprow { border-top: 1px solid var(--line); }
+.cmprow:first-child { border-top: 0; }
+.cmphd { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: transparent; color: var(--fg); padding: 12px 14px; min-height: 62px; text-align: start; }
+.cmprow .bar { width: 5px; align-self: stretch; border-radius: 3px; background: var(--c, var(--brand)); flex: none; }
+.cmprow .t { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.cmprow .t b { font-weight: 700; }
+.cmprow .t span { color: var(--muted); font-size: 0.82rem; }
+.cmprow .v { display: flex; flex-direction: column; align-items: flex-end; font-variant-numeric: tabular-nums; }
+.cmprow .v b { font-size: 1.1rem; font-weight: 800; }
+.cmprow .v span { font-size: 0.8rem; font-weight: 700; }
+.cmprow .good { color: #2E8B57; }
+.cmprow .bad { color: var(--danger); }
+.cmprow.cur { background: var(--sunk); }
+.cmprow.best .v b { color: #2E8B57; }
+.cmprow .rank { width: 24px; height: 24px; border-radius: 50%; background: var(--sunk); font-size: 0.8rem; font-weight: 800; display: grid; place-items: center; flex: none; }
+.cmprow.best .rank { background: var(--lime); color: #171717; }
+.cmpdet { padding: 0 14px 12px 14px; display: flex; flex-direction: column; gap: 8px; font-size: 0.86rem; color: var(--muted); }
+.cmpdet .row2 { display: flex; gap: 8px; flex-wrap: wrap; }
 .about { display: flex; flex-direction: column; gap: 12px; }
 .about .card-a { background: var(--surface); border-radius: var(--r-lg); padding: 16px; display: flex; flex-direction: column; gap: 6px; }
 .about h3 { margin: 0; font-size: 1rem; font-weight: 800; }
@@ -589,6 +614,7 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
         <div class="tile" id="tThird"><span id="tThirdL">נשאר לקנות</span><b id="tThirdV">₪0</b></div>
       </div>
       <button class="budline" id="budLine" type="button" hidden></button>
+      <button class="budline cmpline" id="cmpLine" type="button" hidden></button>
     </div>
   </div>
 </header>
@@ -726,6 +752,7 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
       <button class="mi" id="aboutBtn" type="button"></button>
     </div>
     <div class="spanel" id="storePanel" hidden></div>
+    <div class="spanel" id="cmpPanel" hidden></div>
     <div class="spanel" id="listPanel" hidden></div>
     <div class="spanel" id="orderPanel" hidden></div>
     <div class="spanel" id="sharePanel" hidden></div>
@@ -1137,6 +1164,7 @@ function renderList() {
   $("tThirdL").textContent = saving >= 0.05 ? "חוסכים במבצעים" : "נשאר לקנות";
   $("tThirdV").textContent = saving >= 0.05 ? fmt(saving) : fmt(left);
   renderBudLine(total);
+  renderCmpLine(all);
   $("badge").textContent = open.length; $("badge").hidden = !open.length;
 
   // עד שמאגר המחירים נטען: שלד אפור במקום מחירים חסרים
@@ -1898,7 +1926,7 @@ function tripEditor(t) {
 }
 
 /* ---------- backup & restore ---------- */
-const BACKUP_KEYS = ["shopping-list-v2", "lists", "cur-list", "favs", "history", "dept-order", "big-text", "closed-groups", "budget", "cat-sort", "seen-deals", "compact-view", "sg-sort", "keep-awake", "recurring", "recur-dismissed", "theme", "branch"];
+const BACKUP_KEYS = ["shopping-list-v2", "lists", "cur-list", "favs", "history", "dept-order", "big-text", "closed-groups", "budget", "cat-sort", "seen-deals", "compact-view", "sg-sort", "keep-awake", "recurring", "recur-dismissed", "theme", "branch", "cmp-branches"];
 function backupPanel() {
   const panel = document.createElement("div"); panel.className = "panel";
   panel.innerHTML = "<h3>גיבוי ושחזור</h3><p>כל הנתונים (רשימות, קבועים והיסטוריה) שמורים רק בטלפון הזה. כדאי לשמור גיבוי מדי פעם: בקובץים, בדרייב או בהודעה לעצמכם בוואטסאפ.</p>";
@@ -2104,7 +2132,7 @@ $("dealsForm").addEventListener("submit", e => { e.preventDefault(); $("dealsInp
 $("dealsMore").onclick = () => { dealsShown += 40; renderDeals(); };
 
 /* ---------- settings sheet ---------- */
-const SHEET_PANELS = ["storePanel", "sheetMenu", "listPanel", "orderPanel", "sharePanel", "backupBox", "aboutBox", "recurPanel", "recurList"];
+const SHEET_PANELS = ["storePanel", "cmpPanel", "sheetMenu", "listPanel", "orderPanel", "sharePanel", "backupBox", "aboutBox", "recurPanel", "recurList"];
 function menuItem(btn, icon, label, end = ico("chev", "ico chev")) {
   btn.innerHTML = ico(icon) + `<span class="lbl"></span>` + end;
   btn.querySelector(".lbl").textContent = label;
@@ -2490,7 +2518,7 @@ function applyCatalog(d) {
 const LEGACY_BRANCH = { chain: "ramilevy", id: "11", name: "עפולה", chainName: "רמי לוי" };
 let branch = loadJSON("branch", null);
 if (!branch && (read(LS_KEY) != null || read("history") != null || read("favs") != null)) { branch = LEGACY_BRANCH; saveJSON("branch", branch); }
-let storesIdx = null, loadSeq = 0;
+let storesIdx = null, loadSeq = 0, baseCodes = new Map();   // baseCodes: מזהה מוצר -> ברקוד (גם למוצר שלא נמכר בסניף הנוכחי)
 const getJSON = url => fetch(url).then(r => { if (!r.ok) throw new Error(url + " " + r.status); return r.json(); });
 const loadStores = () => storesIdx ? Promise.resolve(storesIdx) : getJSON("data/stores.json").then(d => storesIdx = d);
 
@@ -2536,7 +2564,7 @@ function loadCatalog() {
   const sel = branch, seq = ++loadSeq;
   loadFailed = false; renderAll();
   return Promise.all([getJSON("data/base.json"), getJSON(`data/chains/${sel.chain}.json`), getJSON(`data/branches/${sel.chain}/${sel.id}.json`)])
-    .then(([base, chain, br]) => buildCatalog(base, chain, br, sel))
+    .then(([base, chain, br]) => { baseCodes = new Map(base.products.map(p => [p.id, p.b || String(p.id)])); return buildCatalog(base, chain, br, sel); })
     .catch(err => {
       // גיבוי: הקובץ הישן של רמי לוי עפולה
       if (sel.chain !== LEGACY_BRANCH.chain || sel.id !== LEGACY_BRANCH.id) throw err;
@@ -2641,6 +2669,200 @@ function chooseBranch(c, id, name) {
     });
   }
 }
+/* ---------- basket comparison: what the list costs in other branches ---------- */
+function renderCmpLine(all) {
+  const el = $("cmpLine");
+  const n = all.filter(i => i.pid != null).length;
+  if (!branch || !n) { el.hidden = true; return; }
+  el.hidden = false;
+  el.innerHTML = `<span>כמה הסל הזה עולה בסניפים אחרים?</span><span class="go">להשוואה${ico("chev", "ico")}</span>`;
+}
+$("cmpLine").onclick = () => openCompare();
+
+// הסניפים שמשווים: מה שהמשתמש בחר, או כברירת מחדל סניפים מכל הרשתות באותה עיר
+const cmpKey = (c, id) => c + "/" + id;
+let cmpSel = loadJSON("cmp-branches", null);
+const cityKey = s => norm(s).replace(/[^א-תa-z0-9]/g, "");
+function storeRow(chain, id) { const r = (storesIdx.stores[chain] || []).find(r => r[0] === id); return r || null; }
+function chainOf(key) { return storesIdx.chains.find(c => c.key === key) || { key, name: key, color: "" }; }
+function defaultCmp() {
+  const me = storeRow(branch.chain, branch.id);
+  const city = cityKey(me ? me[2] || me[1] : branch.name);
+  const byChain = storesIdx.chains.map(c => (storesIdx.stores[c.key] || [])
+    .filter(r => !(c.key === branch.chain && r[0] === branch.id) && city && (cityKey(r[2]) === city || (!r[2] && cityKey(r[1]).includes(city))))
+    .map(r => [c.key, r[0]]));
+  const out = [];
+  for (let round = 0; out.length < 8 && byChain.some(l => l.length > round); round++)   // לסירוגין בין הרשתות
+    for (const l of byChain) if (l[round] && out.length < 8) out.push(l[round]);
+  return out;
+}
+const cmpCache = new Map();
+function cmpGet(url) {
+  // ?cmp=1: לא נשמר בזיכרון של האפליקציה, כדי לא לדחוק את קבצי הסניף שלכם
+  if (!cmpCache.has(url)) cmpCache.set(url, fetch(url + "?cmp=1").then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+    .catch(e => { cmpCache.delete(url); throw e; }));
+  return cmpCache.get(url);
+}
+function branchLookup(chain, br) {
+  if (!chain._pos) chain._pos = new Map(chain.codes.map((c, i) => [c, i]));
+  const miss = new Set(br.miss);
+  return c => {
+    let p;
+    if (c in br.p) p = br.p[c];
+    else { const i = chain._pos.get(c); p = i == null || miss.has(i) ? null : chain.price[i]; }
+    if (p == null) return null;
+    const pr = c in br.pr ? (br.pl[br.pr[c]] || null) : (c in chain.pr ? chain.pl[chain.pr[c]] : null);
+    return { p, pr };
+  };
+}
+// הפריטים ברשימה, לפי ברקוד (מוצר עם קוד פנימי של רשת אחת – רק לסניפים של אותה רשת)
+function basketEntries() {
+  const out = [];
+  for (const it of mineAll()) {
+    if (it.pid == null) continue;
+    const p = product(it);
+    let code = p ? (p.b || String(p.id)) : baseCodes.get(it.pid), only = null;
+    if (!code && typeof it.pid === "string" && it.pid[0] === "s") {
+      const m = it.pid.slice(1).match(/^([a-z]+):(.+)$/);
+      if (m) { only = m[1]; code = m[2]; } else code = it.pid.slice(1);
+    }
+    if (p && typeof p.id === "string") { const m = p.id.slice(1).match(/^([a-z]+):(.+)$/); if (m) { only = m[1]; code = m[2]; } }
+    if (code) out.push({ code, only, qty: it.qty || 1, k: p ? p.k : 0, name: it.name });
+  }
+  return out;
+}
+function basketCost(look, chainKey, entries) {
+  const found = [], missing = [];
+  for (const e of entries) {
+    const r = e.only && e.only !== chainKey ? null : look(e.code);
+    if (r) found.push({ ...r, k: e.k, qty: e.qty, code: e.code }); else missing.push(e);
+  }
+  const saved = listBase;
+  listBase = found.reduce((s, x) => s + x.p * x.qty, 0);   // מבצעים "בקנייה מעל" לפי הסל בסניף הזה
+  const lines = new Map(found.map(x => [x.code, lineCost(x, x.qty)]));
+  listBase = saved;
+  let total = 0; for (const v of lines.values()) total += v;
+  return { total, lines, missing };
+}
+
+let cmpOpen = null;
+function openCompare() {
+  sheetShow("cmpPanel", "השוואת סל");
+  const panel = $("cmpPanel"); panel.textContent = "";
+  panel.append(Object.assign(document.createElement("p"), { textContent: "טוען…" }));
+  loadStores().then(renderCompare).catch(() => { panel.querySelector("p").textContent = "אין חיבור לאינטרנט. נסו שוב בעוד רגע."; });
+}
+function renderCompare() {
+  const panel = $("cmpPanel"); panel.textContent = "";
+  const entries = basketEntries();
+  const free = mineAll().filter(i => i.pid == null).length;
+  if (!entries.length) { panel.append(Object.assign(document.createElement("p"), { textContent: "הוסיפו לרשימה מוצרים מהמאגר, ואז אפשר להשוות מחירים בין סניפים." })); return; }
+  const sel = (cmpSel || defaultCmp()).filter(([c, id]) => storeRow(c, id) && !(c === branch.chain && id === branch.id));
+  const rows = [[branch.chain, branch.id], ...sel];
+  const sum = document.createElement("div"); sum.className = "cmpsum";
+  sum.innerHTML = `המחיר של <b>${entries.length} המוצרים ברשימה</b> בכל סניף, כולל מבצעים.` + (free ? ` ${free} פריטים שנכתבו בלי מוצר מהמאגר לא נכללים.` : "") +
+    ` ההפרש מחושב רק על מוצרים שנמכרים בשני הסניפים.`;
+  const list = document.createElement("div"); list.className = "cmplist";
+  panel.append(sum, list);
+  const res = new Map();
+  const draw = () => {
+    list.textContent = "";
+    const mine = res.get(cmpKey(branch.chain, branch.id));
+    const order = rows.slice().sort((a, b) => {
+      const ra = res.get(cmpKey(...a)), rb = res.get(cmpKey(...b));
+      if (!ra || ra.err) return 1; if (!rb || rb.err) return -1;
+      return ra.missing.length - rb.missing.length || ra.total - rb.total;
+    });
+    const ok = order.filter(r => { const x = res.get(cmpKey(...r)); return x && !x.err; });
+    const best = ok.length > 1 ? cmpKey(...ok[0]) : null;
+    order.forEach(([c, id]) => {
+      const key = cmpKey(c, id), r = res.get(key), ch = chainOf(c), st = storeRow(c, id);
+      const isCur = c === branch.chain && id === branch.id;
+      const row = document.createElement("div"); row.className = "cmprow" + (isCur ? " cur" : "") + (key === best ? " best" : "");
+      row.style.setProperty("--c", ch.color);
+      const hd = document.createElement("button"); hd.type = "button"; hd.className = "cmphd";
+      hd.innerHTML = '<span class="rank"></span><span class="bar"></span><span class="t"><b></b><span></span></span><span class="v"><b></b><span></span></span>';
+      const idx = ok.findIndex(x => cmpKey(...x) === key);
+      hd.querySelector(".rank").textContent = idx >= 0 ? idx + 1 : "";
+      hd.querySelector(".t b").textContent = `${ch.name} ${st[1]}`;
+      const info = [isCur ? "הסניף שלך" : st[2]];
+      const vb = hd.querySelector(".v b"), vs = hd.querySelector(".v span");
+      if (!r) vb.textContent = "…";
+      else if (r.err) vb.textContent = "לא זמין";
+      else {
+        vb.textContent = fmt(r.total);
+        if (r.missing.length) info.push(`חסרים ${r.missing.length}`);
+        if (!isCur && mine && !mine.err) {
+          let a = 0, b = 0;
+          for (const [code, v] of r.lines) if (mine.lines.has(code)) { a += v; b += mine.lines.get(code); }
+          const d = a - b;
+          if (Math.abs(d) >= 0.05) { vs.textContent = d < 0 ? `זול ב-${fmt(-d)}` : `יקר ב-${fmt(d)}`; vs.className = d < 0 ? "good" : "bad"; }
+          else vs.textContent = "אותו מחיר";
+        }
+      }
+      hd.querySelector(".t span").textContent = info.filter(Boolean).join(" · ");
+      row.append(hd);
+      if (cmpOpen === key && r && !r.err) {
+        const det = document.createElement("div"); det.className = "cmpdet";
+        if (r.missing.length) det.append(Object.assign(document.createElement("span"), { textContent: "לא נמכרים בסניף: " + r.missing.map(e => e.name).join(", ") }));
+        const acts = document.createElement("div"); acts.className = "row2";
+        if (!isCur) {
+          const go = document.createElement("button"); go.type = "button"; go.className = "btn"; go.textContent = "לעבור לסניף הזה";
+          go.onclick = () => chooseBranch(ch, id, st[1]);
+          const rm = document.createElement("button"); rm.type = "button"; rm.className = "btn ghost"; rm.textContent = "הסרה מההשוואה";
+          rm.onclick = () => { cmpSel = sel.filter(x => cmpKey(...x) !== key); saveJSON("cmp-branches", cmpSel); cmpOpen = null; renderCompare(); };
+          acts.append(go, rm);
+        }
+        if (acts.childNodes.length) det.append(acts);
+        if (det.childNodes.length) row.append(det);
+      }
+      hd.onclick = () => { cmpOpen = cmpOpen === key ? null : key; draw(); };
+      list.append(row);
+    });
+  };
+  draw();
+  const add = document.createElement("button"); add.type = "button"; add.className = "btn ghost"; add.textContent = "＋ הוספת סניף להשוואה";
+  add.onclick = () => addCompareBranch(sel);
+  panel.append(add);
+  if (!sel.length) panel.append(Object.assign(document.createElement("p"), { textContent: "לא מצאנו סניפים נוספים באותה עיר. הוסיפו סניפים להשוואה בכפתור למעלה." }));
+  for (const [c, id] of rows) {
+    Promise.all([cmpGet(`data/chains/${c}.json`), cmpGet(`data/branches/${c}/${id}.json`)])
+      .then(([chain, br]) => res.set(cmpKey(c, id), basketCost(branchLookup(chain, br), c, entries)))
+      .catch(() => res.set(cmpKey(c, id), { err: true }))
+      .then(() => { if (!$("cmpPanel").hidden) draw(); });
+  }
+}
+function addCompareBranch(sel) {
+  const panel = $("cmpPanel"); panel.textContent = "";
+  $("sheetTitle").textContent = "הוספת סניף להשוואה";
+  $("sheetBack").hidden = false; $("sheetBack").onclick = () => { $("sheetBack").onclick = openMenu; $("sheetTitle").textContent = "השוואת סל"; renderCompare(); };
+  const sw = document.createElement("div"); sw.className = "brsearch";
+  const q = document.createElement("input"); q.className = "field"; q.type = "search"; q.placeholder = "עיר, רשת או שם הסניף"; q.setAttribute("aria-label", "חיפוש סניף"); q.autocomplete = "off";
+  sw.append(q);
+  const list = document.createElement("div"); list.className = "brlist";
+  const have = new Set([cmpKey(branch.chain, branch.id), ...sel.map(x => cmpKey(...x))]);
+  const all = [];
+  for (const c of storesIdx.chains) for (const r of storesIdx.stores[c.key] || []) if (!have.has(cmpKey(c.key, r[0]))) all.push([c, r, norm(c.name + " " + r.join(" "))]);
+  const draw = () => {
+    const t = norm(q.value.trim()).split(" ").filter(Boolean);
+    list.textContent = "";
+    if (!t.length) { list.append(Object.assign(document.createElement("p"), { textContent: "הקלידו שם של עיר או רשת.", style: "margin:14px 16px;color:var(--muted)" })); return; }
+    const hits = all.filter(x => t.every(w => x[2].includes(w))).slice(0, 40);
+    for (const [c, r] of hits) {
+      const b = document.createElement("button"); b.type = "button"; b.className = "bri";
+      b.innerHTML = ico("pin") + '<span class="t"><b></b><span></span></span>';
+      b.querySelector("b").textContent = `${c.name} ${r[1]}`;
+      b.querySelector(".t span").textContent = [r[2], r[3]].filter(Boolean).join(" · ") || " ";
+      b.onclick = () => { cmpSel = [...sel, [c.key, r[0]]]; saveJSON("cmp-branches", cmpSel); $("sheetBack").onclick = openMenu; $("sheetTitle").textContent = "השוואת סל"; renderCompare(); };
+      list.append(b);
+    }
+    if (!hits.length) list.append(Object.assign(document.createElement("p"), { textContent: "לא נמצא סניף.", style: "margin:14px 16px;color:var(--muted)" }));
+  };
+  q.addEventListener("input", draw); draw();
+  panel.append(sw, list);
+  setTimeout(() => q.focus(), 50);
+}
+
 // בהצגה ראשונה אי אפשר לסגור בלי לבחור סניף
 $("sheet").addEventListener("cancel", e => { if (pickerFirst) e.preventDefault(); });
 $("sheet").addEventListener("click", e => { if (pickerFirst && e.target === e.currentTarget) e.stopImmediatePropagation(); }, true);

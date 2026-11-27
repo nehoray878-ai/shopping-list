@@ -1,6 +1,6 @@
 // שומר את האפליקציה במכשיר כדי שתיפתח מהר וגם בלי אינטרנט בסופר.
 // כשמעלים גרסה חדשה: מעלים את VERSION, והטלפונים יתעדכנו בפתיחה הבאה.
-const VERSION = "v27";
+const VERSION = "v28";
 const SHELL = "shell-" + VERSION;
 const DATA = "data-v1";       // הקטלוג: לא נמחק בין גרסאות, כדי שתמיד יהיו מחירים
 const IMG = "img-v1";
@@ -32,6 +32,8 @@ self.addEventListener("fetch", e => {
   if (url.hostname === "fonts.googleapis.com") return e.respondWith(staleWhileRevalidate(req, FONTS, e));
   if (url.origin !== location.origin) return;
 
+  // השוואת סל (?cmp=1): ישר מהרשת, בלי לשמור – כדי לא לדחוק את קבצי הסניף של המשתמש
+  if (url.pathname.includes("/data/") && url.searchParams.has("cmp")) return;
   if (url.pathname.endsWith("/catalog.json") || url.pathname.includes("/data/")) return e.respondWith(catalog(req, e));
   e.respondWith(networkFirst(req));
 });
