@@ -6,7 +6,7 @@
 <title>רשימת הקניות</title>
 <meta name="description" content="רשימת קניות עם המחירים והמבצעים של סניף רמי לוי">
 <meta name="theme-color" content="#1E5A3C">
-<meta name="app-version" content="2.8">
+<meta name="app-version" content="2.9">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="קניות">
@@ -1154,12 +1154,12 @@ function parseSpoken(text) {
 }
 // המוצר שנבחר כברירת מחדל: מה שקניתם בעבר, אחר כך ירק/פרי טרי או מוצר בסיסי, לא מעובד ("חלב" → חלב, לא חלב מרוכז)
 const PROCESSED = /מרוכז|אבקת|בחומץ|במלח|חמוץ|מיובש|ממרח|בטעם|טעם|לקפה|קפוא|שרי/;
-function voiceOptions(name) {
+function voiceOptions(name, limit = 6) {
   const n = norm(name);
   const variants = wordVariants(n);
   const habit = new Set([...favs, ...frequent(1), ...items.map(i => i.pid).filter(x => x != null)]);
   const pool = new Map();
-  for (const v of variants) for (const p of search(v, "", 40)) pool.set(p.id, p);
+  for (const v of variants) for (const p of search(v, "", Math.max(40, limit * 3))) pool.set(p.id, p);
   const score = p => {
     const s = norm(p.n); let sc = 0;
     if (variants.includes(s)) sc += 100;
@@ -1171,7 +1171,7 @@ function voiceOptions(name) {
     if (PROCESSED.test(p.n)) sc -= 25;
     return sc - p.n.length * 0.3;
   };
-  return [...pool.values()].sort((a, b) => score(b) - score(a)).slice(0, 6);
+  return [...pool.values()].sort((a, b) => score(b) - score(a)).slice(0, limit);
 }
 function renderVoice(heard, parsed) {
   const box = $("voicePanel"); box.textContent = ""; box.hidden = false;
@@ -1209,6 +1209,16 @@ function renderVoice(heard, parsed) {
   acts.append(ok, again);
   box.append(rows, acts);
 }
+// אמרו מוצר אחד ("חלב"): פותחים את כל האפשרויות שלו לבחירה, עם המיון
+function voiceSearch(it) {
+  $("voicePanel").hidden = true;
+  // "עגבניות" → מחפשים בצורה שמוצאת הכי הרבה מוצרים (עגבניה וגם עגבניות)
+  const best = wordVariants(norm(it.name)).map(v => [v, search(v, "").length]).sort((a, b) => b[1] - a[1])[0];
+  $("addInput").value = best && best[1] ? best[0] : it.name;
+  sgFromVoice = true; sgQty = it.qty; sgIndex = -1;
+  renderSuggest();
+  if (!sgItems.length) toast(`לא מצאנו מוצרים בשם "${it.name}". אפשר להוסיף בלי לבחור מוצר`);
+}
 let rec = null;
 function stopVoice() { if (rec) { try { rec.abort(); } catch {} rec = null; } $("micBtn").classList.remove("on"); $("micBtn").setAttribute("aria-pressed", "false"); }
 function startVoice() {
@@ -1229,7 +1239,7 @@ function startVoice() {
   };
   rec.onend = () => {
     const text = finalText.trim(); stopVoice();
-    if (text) renderVoice(text, parseSpoken(text));
+    if (text) { const parsed = parseSpoken(text); if (parsed.length === 1) voiceSearch(parsed[0]); else renderVoice(text, parsed); }
     else if (!$("voicePanel").hidden && $("voicePanel").querySelector(".vrows") == null) $("voicePanel").hidden = true;
   };
   $("micBtn").classList.add("on"); $("micBtn").setAttribute("aria-pressed", "true");
@@ -1241,14 +1251,16 @@ if (SpeechRec) { $("micBtn").hidden = false; $("micBtn").onclick = startVoice; }
 /* ---------- add bar with suggestions ---------- */
 let sgIndex = -1, sgItems = [];
 let sgSort = loadJSON("sg-sort", "");
+let sgFromVoice = false, sgQty = 1;   // החיפוש נפתח מהמיקרופון
 const SG_SORTS = [["", "הכי מתאים"], ["asc", "הכי זול"], ["desc", "הכי יקר"], ["unit", "משתלם לכמות"]];
 /* למיון לפי מחיר: רק מוצרים מאותו סוג שמחפשים ("חלב" → חלב, לא "סחלב" או "שוקולד חלב") */
 function sortedMatches(q, mode) {
   const rel = search(q, "");
   if (!rel.length) return [];
   const toks = norm(q).split(" ").filter(Boolean);
-  const words = rel.filter(p => toks.every(t => (" " + p._s).includes(" " + t)));   // המילה מתחילה כך
-  const base = words.length ? words : rel;
+  const whole = rel.filter(p => toks.every(t => (" " + p._s + " ").includes(" " + t + " ")));   // המילה המלאה ("חלב", לא "חלבה")
+  const words = rel.filter(p => toks.every(t => (" " + p._s).includes(" " + t)));                // המילה מתחילה כך
+  const base = whole.length >= 3 ? whole : words.length ? words : rel;
   const groups = new Set(base.slice(0, 5).map(p => p.g).filter(Boolean));          // הקטגוריות של התוצאות הכי מתאימות
   const same = base.filter(p => groups.has(p.g));
   return sortRes(same.length >= 3 ? same : base, mode);
@@ -1258,7 +1270,11 @@ function renderSuggest() {
   $("addClear").hidden = !q;
   if (!q.trim()) { box.hidden = true; return; }
   // ממוינים: מחפשים בכל המוצרים שמתאימים ואז ממיינים, כדי שהזול/המשתלם באמת יופיע ראשון
-  sgItems = catalog.products.length ? (sgSort ? sortedMatches(q, sgSort).slice(0, 12) : search(q, "", 7)) : [];
+  const lim = sgFromVoice ? 25 : sgSort ? 12 : 7;   // מקול: מציגים את כל האפשרויות
+  sgItems = !catalog.products.length ? []
+    : sgSort ? sortedMatches(q, sgSort).slice(0, lim)
+    : sgFromVoice ? voiceOptions(q, lim)            // מקול: המוצר הבסיסי ומה שקניתם קודם – ראשונים
+    : search(q, "", lim);
   box.textContent = "";
   if (catalog.products.length) {
     const bar = document.createElement("div"); bar.className = "sgsort"; bar.setAttribute("role", "group"); bar.setAttribute("aria-label", "מיון התוצאות");
@@ -1281,7 +1297,7 @@ function renderSuggest() {
     const pr = document.createElement("span"); pr.className = "pr"; pr.textContent = fmt(sgSort ? effPrice(p) : p.p);
     b.append(thumb(p), col, pr);
     b.onmousedown = e => e.preventDefault();
-    b.onclick = () => { addProduct(p); clearAdd(); };
+    b.onclick = () => { addProduct(p, sgQty); clearAdd(); };
     box.append(b);
   });
   const f = document.createElement("button"); f.type = "button"; f.className = "sg free";
@@ -1292,8 +1308,14 @@ function renderSuggest() {
   box.append(f);
   box.hidden = false;
 }
-function clearAdd() { $("addInput").value = ""; sgIndex = -1; renderSuggest(); $("addInput").focus(); }
-$("addInput").addEventListener("input", () => { sgIndex = -1; renderSuggest(); });
+function clearAdd() {
+  const voice = sgFromVoice;
+  $("addInput").value = ""; sgIndex = -1; sgFromVoice = false; sgQty = 1; renderSuggest();
+  if (!voice) $("addInput").focus();   // אחרי בחירה מקול לא פותחים מקלדת
+}
+$("addInput").addEventListener("input", () => { sgIndex = -1; sgFromVoice = false; sgQty = 1; renderSuggest(); });
+// רשימת האפשרויות שנפתחה מקול נסגרת בלחיצה מחוץ לה
+document.addEventListener("click", e => { if (sgFromVoice && !$("suggest").hidden && !e.target.closest(".addwrap")) { $("suggest").hidden = true; } });
 $("addInput").addEventListener("blur", () => setTimeout(() => $("suggest").hidden = true, 150));
 $("addInput").addEventListener("focus", renderSuggest);
 $("addInput").addEventListener("keydown", e => {
