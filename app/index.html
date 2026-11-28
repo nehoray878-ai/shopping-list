@@ -7,7 +7,7 @@
 <title>רשימת הקניות</title>
 <meta name="description" content="רשימת קניות עם המחירים והמבצעים של הסניף שלך: רמי לוי, שופרסל, ויקטורי, יוחננוף, אושר עד וקרפור">
 <meta name="theme-color" content="#1E5A3C">
-<meta name="app-version" content="4.5">
+<meta name="app-version" content="4.6">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="קניות">
@@ -517,6 +517,9 @@ html.sheet-open, html.sheet-open body { overflow: hidden; overscroll-behavior: n
 .adm-u.blocked .t b { text-decoration: line-through; color: var(--muted); }
 .adm-u .btn { min-height: 36px; padding: 6px 12px; font-size: 0.85rem; }
 /* scan a paper list */
+.fb-kinds { display: flex; gap: 6px; flex-wrap: wrap; }
+#legalPanel .card-a p + p { margin-top: -2px; }
+.legal-date { color: var(--muted); font-size: 0.8rem; margin: 0; text-align: center; }
 .scan-choose { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .scan-choose button { border: 0; border-radius: var(--r-lg); background: var(--surface); color: var(--fg); padding: 18px 10px; display: flex; flex-direction: column; align-items: center; gap: 8px; font-weight: 800; font-size: 1rem; }
 .scan-choose button .ico { width: 30px; height: 30px; color: var(--brand); }
@@ -841,6 +844,8 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
       <button class="mi" id="awakeBtn" type="button" role="switch" aria-checked="false" hidden></button>
       <button class="mi" id="recurBtn" type="button"></button>
       <button class="mi" id="backupBtn" type="button"></button>
+      <button class="mi" id="shareAppBtn" type="button"></button>
+      <button class="mi" id="feedbackBtn" type="button"></button>
       <button class="mi" id="aboutBtn" type="button"></button>
       <button class="mi" id="adminBtn" type="button" hidden></button>
       <button class="mi" id="accountBtn" type="button" hidden></button>
@@ -850,6 +855,8 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
     <div class="spanel" id="basketPanel" hidden></div>
     <div class="spanel about" id="privacyPanel" hidden></div>
     <div class="spanel" id="scanPanel" hidden></div>
+    <div class="spanel about" id="legalPanel" hidden></div>
+    <div class="spanel" id="feedbackPanel" hidden></div>
     <div class="spanel" id="adminPanel" hidden></div>
     <div class="spanel" id="listPanel" hidden></div>
     <div class="spanel" id="orderPanel" hidden></div>
@@ -2440,7 +2447,7 @@ $("dealsForm").addEventListener("submit", e => { e.preventDefault(); $("dealsInp
 $("dealsMore").onclick = () => { dealsShown += 40; renderDeals(); };
 
 /* ---------- settings sheet ---------- */
-const SHEET_PANELS = ["storePanel", "cmpPanel", "basketPanel", "privacyPanel", "scanPanel", "adminPanel", "sheetMenu", "listPanel", "orderPanel", "sharePanel", "backupBox", "aboutBox", "recurPanel", "recurList"];
+const SHEET_PANELS = ["storePanel", "cmpPanel", "basketPanel", "privacyPanel", "scanPanel", "legalPanel", "feedbackPanel", "adminPanel", "sheetMenu", "listPanel", "orderPanel", "sharePanel", "backupBox", "aboutBox", "recurPanel", "recurList"];
 function menuItem(btn, icon, label, end = ico("chev", "ico chev")) {
   btn.innerHTML = ico(icon) + `<span class="lbl"></span>` + end;
   btn.querySelector(".lbl").textContent = label;
@@ -2452,6 +2459,8 @@ menuItem($("bigBtn"), "text", "טקסט גדול", '<span class="switch" aria-hi
 menuItem($("awakeBtn"), "sun", "המסך נשאר דלוק בזמן קנייה", '<span class="switch" aria-hidden="true"></span>');
 menuItem($("recurBtn"), "repeat", "מוצרים חוזרים");
 menuItem($("backupBtn"), "save", "גיבוי ושחזור");
+menuItem($("shareAppBtn"), "share", "שתפו את האפליקציה עם חברים");
+menuItem($("feedbackBtn"), "chat", "שליחת משוב: רעיון או תקלה");
 menuItem($("aboutBtn"), "info", "אודות ומקור המחירים");
 function sheetShow(id, title) {
   for (const p of SHEET_PANELS) $(p).hidden = p !== id;
@@ -2499,7 +2508,9 @@ function renderAbout() {
         : "הרשימות, הקבועים, התקציב וההיסטוריה נשמרים רק בטלפון הזה. אין הרשמה, אין מעקב ואין פרסומות."),
       P("כדי לא לאבד נתונים כשמחליפים טלפון, כדאי לשמור גיבוי מדי פעם (בתפריט ההגדרות).")),
     card("", P("האפליקציה פרטית ואינה קשורה לאף רשת שיווק. תמונות המוצרים מאתרי רמי לוי אונליין ושופרסל אונליין, והמחירים מהמחירונים הרשמיים של הרשתות."),
-      Object.assign(document.createElement("button"), { type: "button", className: "linkbtn", textContent: "מדיניות פרטיות ומחיקת נתונים", onclick: openPrivacy })),
+      Object.assign(document.createElement("button"), { type: "button", className: "linkbtn", textContent: "מדיניות פרטיות ומחיקת נתונים", onclick: openPrivacy }),
+      Object.assign(document.createElement("button"), { type: "button", className: "linkbtn", textContent: "תנאי שימוש", onclick: () => openLegal("terms") }),
+      Object.assign(document.createElement("button"), { type: "button", className: "linkbtn", textContent: "הצהרת נגישות", onclick: () => openLegal("a11y") })),
     card("זכויות יוצרים",
       P(`© ${new Date().getFullYear()} רשימת הקניות. כל הזכויות שמורות. אין להעתיק, לשכפל או להפיץ את האפליקציה, העיצוב או הקוד שלה ללא רשות.`),
       P("המחירים והמבצעים נלקחים מהקבצים שהרשתות מפרסמות לפי חוק שקיפות המחירים (התשע\"ה-2014). שמות הרשתות, הלוגואים והסימנים המסחריים שייכים לבעליהם."),
@@ -3475,6 +3486,80 @@ function renderScanRows() {
   box.append(list, add1, foot);
 }
 
+/* ---------- terms of use + accessibility statement ---------- */
+const LEGAL_UPDATED = "28.11.2026";
+function openLegal(kind) {
+  const box = $("legalPanel"); box.textContent = "";
+  const card = (title, ...lines) => {
+    const c = document.createElement("div"); c.className = "card-a";
+    if (title) c.append(Object.assign(document.createElement("h3"), { textContent: title }));
+    for (const l of lines) c.append(Object.assign(document.createElement("p"), { textContent: l }));
+    box.append(c); return c;
+  };
+  if (kind === "terms") {
+    card("כללי", "השימוש באפליקציה \"רשימת הקניות\" חינמי ומיועד לשימוש אישי בלבד. השימוש באפליקציה מהווה הסכמה לתנאים אלה.");
+    card("המחירים והמבצעים",
+      "המחירים והמבצעים נלקחים מהקבצים שהרשתות מפרסמות לפי חוק שקיפות המחירים, ומתעדכנים בדרך כלל פעמיים ביום. הם מוצגים כהערכה בלבד.",
+      "ייתכנו טעויות, עיכובים בעדכון או הבדלים מהמחיר בקופה. המחיר הקובע הוא המחיר בסניף. מבצעי מועדון וקופונים אינם כלולים.");
+    card("אחריות",
+      "האפליקציה ניתנת \"כמות שהיא\" (AS IS), ללא אחריות מכל סוג. לא נהיה אחראים לכל נזק, הפסד או החלטת קנייה שנעשו על סמך המידע באפליקציה.",
+      "הרשימות נשמרות בטלפון שלכם. מומלץ לשמור גיבוי מדי פעם (בהגדרות) – מחיקת האפליקציה או החלפת טלפון עלולות למחוק אותן.");
+    card("שימוש הוגן",
+      "אין להעתיק, לשכפל, להפיץ או למכור את האפליקציה, העיצוב, הקוד או הנתונים שלה, ואין לנסות לפגוע בה או בשרתים שלה.",
+      "מנהל האפליקציה רשאי לחסום גישה לאפליקציה בכל עת, וכן לשנות או להפסיק את השירות.");
+    card("קשר לרשתות", "האפליקציה אינה קשורה לאף רשת שיווק. שמות הרשתות, הסימנים המסחריים ותמונות המוצרים שייכים לבעליהם.");
+    card("שינויים", "התנאים עשויים להתעדכן. המשך השימוש לאחר עדכון מהווה הסכמה לתנאים המעודכנים. לשאלות – \"שליחת משוב\" בהגדרות.");
+  } else {
+    card("המחויבות שלנו", "אנחנו רוצים שכל אחד יוכל להשתמש באפליקציה, כולל אנשים עם מוגבלות. האפליקציה נבנתה בהתאם להנחיות הנגישות WCAG 2.1 ברמה AA ולתקן הישראלי ת\"י 5568, ככל האפשר.");
+    card("מה נעשה באפליקציה",
+      "• טקסט גדול – בהגדרות.", "• מצב כהה ובהיר.", "• כל הכפתורים מתוארים לקוראי מסך (VoiceOver ו-TalkBack).", "• ניווט במקלדת, עם סימון ברור של הרכיב הנבחר.",
+      "• בלי אנימציות למי שביקש זאת בהגדרות הטלפון.", "• ניגודיות צבעים גבוהה.", "• הוספה בקול ובסריקה, למי שקשה לו להקליד.", "• המסך נשאר דלוק בזמן קנייה.");
+    card("מגבלות ידועות",
+      "• לחלק מהמוצרים אין תמונה, ותמונות המוצרים אינן מתוארות מעבר לשם המוצר.", "• זיהוי כתב יד בסריקה עלול לטעות – תמיד מוצג מסך בדיקה לפני ההוספה.", "• שמות מוצרים מגיעים מהרשתות כפי שהם, לעתים בקיצורים.");
+    card("נתקלתם בבעיה?",
+      "אם משהו באפליקציה לא נגיש לכם, נשמח לדעת ולתקן. כתבו לנו ב\"שליחת משוב\" בהגדרות (סוג: נגישות), ואנחנו נחזור אליכם בהקדם.");
+  }
+  box.append(Object.assign(document.createElement("p"), { className: "legal-date", textContent: `עודכן לאחרונה: ${LEGAL_UPDATED}` }));
+  sheetShow("legalPanel", kind === "terms" ? "תנאי שימוש" : "הצהרת נגישות");
+}
+
+/* ---------- share the app + feedback ---------- */
+const APP_URL = location.origin + location.pathname.replace(/index\.html$/, "");
+$("shareAppBtn").onclick = async () => {
+  const text = "רשימת קניות חכמה עם המחירים והמבצעים של הסניף שלך – רמי לוי, שופרסל, ויקטורי, יוחננוף, אושר עד וקרפור. חינם 🛒";
+  if (navigator.share) { try { await navigator.share({ title: "רשימת הקניות", text, url: APP_URL }); return; } catch (e) { if (e && e.name === "AbortError") return; } }
+  const a = document.createElement("a"); a.href = "https://wa.me/?text=" + encodeURIComponent(text + "\n" + APP_URL); a.target = "_blank"; a.rel = "noopener";
+  document.body.append(a); a.click(); a.remove();
+};
+$("feedbackBtn").onclick = openFeedback;
+function openFeedback() {
+  const box = $("feedbackPanel"); box.textContent = "";
+  let kind = "idea";
+  const kinds = document.createElement("div"); kinds.className = "fb-kinds";
+  const KINDS = { idea: "💡 רעיון", bug: "🐞 תקלה", price: "🏷️ מחיר שגוי", a11y: "♿ נגישות", other: "אחר" };
+  const drawKinds = () => { kinds.textContent = ""; for (const [k, l] of Object.entries(KINDS)) { const b = document.createElement("button"); b.type = "button"; b.className = "dchip" + (k === kind ? " on" : ""); b.textContent = l; b.setAttribute("aria-pressed", k === kind ? "true" : "false"); b.onclick = () => { kind = k; drawKinds(); }; kinds.append(b); } };
+  drawKinds();
+  const ta = document.createElement("textarea"); ta.className = "scan-txt"; ta.maxLength = 1000; ta.setAttribute("aria-label", "המשוב שלכם");
+  ta.placeholder = "מה היה עוזר לכם? מה לא עבד? אם זה מחיר שגוי – כתבו את המוצר והסניף.";
+  const err = document.createElement("div"); err.className = "err";
+  const send = document.createElement("button"); send.type = "button"; send.className = "btn"; send.textContent = "שליחה";
+  send.onclick = async () => {
+    const text = ta.value.trim();
+    if (text.length < 3) { err.textContent = "כתבו כמה מילים לפני השליחה."; return; }
+    send.disabled = true; err.textContent = "";
+    try {
+      if (!FIREBASE_CONFIG) throw new Error("no firebase");
+      await authReady();
+      await db.collection("feedback").add({ kind, text, t: Date.now(), email: myEmail(), version: APP_VERSION,
+        branch: branch ? `${branch.chainName} ${branch.name}` : "", ua: navigator.userAgent.slice(0, 160) });
+      closeSheet(); toast("תודה! המשוב נשלח 🙏");
+    } catch (e) { console.warn("feedback", e); err.textContent = "השליחה לא הצליחה. בדקו את החיבור לאינטרנט ונסו שוב."; send.disabled = false; }
+  };
+  box.append(Object.assign(document.createElement("p"), { textContent: "המשוב מגיע ישירות למנהל האפליקציה. כל רעיון ותקלה עוזרים לשפר." }), kinds, ta, err, send);
+  sheetShow("feedbackPanel", "שליחת משוב");
+  setTimeout(() => ta.focus(), 50);
+}
+
 /* ---------- privacy policy + delete my data ---------- */
 function openPrivacy() {
   const box = $("privacyPanel"); box.textContent = "";
@@ -3536,7 +3621,7 @@ $("adminBtn").onclick = () => { sheetShow("adminPanel", "ניהול משתמשי
 async function renderAdmin() {
   const panel = $("adminPanel"); panel.textContent = "";
   panel.append(Object.assign(document.createElement("p"), { textContent: "טוען…" }));
-  let users, errors = [];
+  let users, errors = [], feedback = [];
   try {
     const docs = (await db.collection("users").orderBy("last", "desc").get()).docs.map(d => ({ uid: d.id, ...d.data() }));
     // שורה אחת לכל מייל (טלפון ומחשב של אותו אדם)
@@ -3548,6 +3633,7 @@ async function renderAdmin() {
     }
     users = [...byEmail.values()];
     errors = (await db.collection("errors").orderBy("t", "desc").limit(20).get().catch(() => ({ docs: [] }))).docs.map(d => d.data());
+    feedback = (await db.collection("feedback").orderBy("t", "desc").limit(50).get().catch(() => ({ docs: [] }))).docs.map(d => ({ id: d.id, ...d.data() }));
   }
   catch (e) { panel.querySelector("p").textContent = "אין גישה לרשימת המשתמשים (בדקו את כללי האבטחה)."; return; }
   panel.textContent = "";
@@ -3588,6 +3674,21 @@ async function renderAdmin() {
   };
   q.addEventListener("input", draw); draw();
   panel.append(stats, q, list);
+  if (feedback.length) {
+    const KL = { idea: "💡 רעיון", bug: "🐞 תקלה", price: "🏷️ מחיר שגוי", a11y: "♿ נגישות", other: "אחר" };
+    panel.append(Object.assign(document.createElement("h4"), { className: "opt-h", textContent: `משוב ממשתמשים (${feedback.length})` }));
+    const fl = document.createElement("div"); fl.className = "cmplist";
+    for (const f of feedback) {
+      const r = document.createElement("div"); r.className = "adm-u";
+      const tx = document.createElement("span"); tx.className = "t";
+      tx.append(Object.assign(document.createElement("b"), { textContent: f.text, style: "white-space:pre-wrap;font-weight:500" }),
+        Object.assign(document.createElement("span"), { textContent: [KL[f.kind] || f.kind, new Date(f.t).toLocaleString("he-IL"), f.email, f.branch, `גרסה ${f.version}`].filter(Boolean).join(" · ") }));
+      const del = document.createElement("button"); del.type = "button"; del.className = "btn ghost"; del.textContent = "טופל";
+      del.onclick = async () => { del.disabled = true; try { await db.collection("feedback").doc(f.id).delete(); r.remove(); } catch { del.disabled = false; toast("לא נמחק"); } };
+      r.append(tx, del); fl.append(r);
+    }
+    panel.append(fl);
+  }
   if (errors.length) {
     const eh = Object.assign(document.createElement("h4"), { className: "opt-h", textContent: `תקלות אחרונות אצל משתמשים (${errors.length})` });
     const el = document.createElement("div"); el.className = "cmplist";

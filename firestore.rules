@@ -34,6 +34,14 @@ service cloud.firestore {
       allow read, delete: if isAdmin();
     }
 
+    // משוב מהמשתמשים: כל מחובר שלא נחסם יכול לשלוח (עד 1000 תווים), רק המנהל קורא ומוחק
+    match /feedback/{id} {
+      allow create: if signedIn() && !blocked()
+        && request.resource.data.keys().hasOnly(['kind', 'text', 't', 'email', 'version', 'branch', 'ua'])
+        && request.resource.data.text is string && request.resource.data.text.size() <= 1000;
+      allow read, delete: if isAdmin();
+    }
+
     // רשימה משותפת: רק למחוברים שלא נחסמו (מי שיודע את קוד הרשימה)
     match /lists/{code}/items/{item} {
       allow read, write: if signedIn() && !blocked();
