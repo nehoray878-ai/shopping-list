@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script>/* מצב בהיר/כהה לפני שהדף מצויר, כדי שלא יהבהב */(function(){var t="auto";try{t=JSON.parse(localStorage.getItem("theme"))||"auto"}catch(e){}var d=t==="dark"||(t==="auto"&&matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.setAttribute("data-theme",d?"dark":"light")})();</script>
-<title>רשימת הקניות</title>
+<title>SmartSal – רשימת קניות חכמה</title>
 <meta name="description" content="רשימת קניות עם המחירים והמבצעים של הסניף שלך: רמי לוי, שופרסל, ויקטורי, יוחננוף, אושר עד וקרפור">
 <meta name="theme-color" content="#1E5A3C">
-<meta name="app-version" content="4.7">
+<meta name="app-version" content="4.8">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="קניות">
+<meta name="apple-mobile-web-app-title" content="SmartSal">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180-v2.png">
@@ -863,7 +863,7 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
 <div class="gate" id="gate" hidden>
   <div class="gate-in">
     <img src="icon-192-v2.png" alt="" width="84" height="84">
-    <h1>רשימת הקניות</h1>
+    <h1 dir="ltr">SmartSal</h1>
     <p class="gate-txt" id="gateTxt">כדי להיכנס, כתבו את כתובת המייל שלכם.</p>
     <form class="gate-form" id="gateForm" novalidate>
       <input class="gate-input" id="gateEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" spellcheck="false" placeholder="your@email.com" aria-label="כתובת מייל" dir="ltr">
@@ -882,7 +882,7 @@ const $ = id => document.getElementById(id);
 const LS_KEY = "shopping-list-v2";
 const fmt = n => "₪" + n.toFixed(2);
 const APP_VERSION = document.querySelector('meta[name="app-version"]').content;   // לעדכן ב-<head> בכל גרסה
-const WHATS_NEW_ID = "4.5";   // לשנות רק כשיש כרטיס "מה חדש" חדש להציג
+const WHATS_NEW_ID = "4.8";   // לשנות רק כשיש כרטיס "מה חדש" חדש להציג
 
 /* ---------- icons (one stroke style everywhere, instead of emoji) ---------- */
 const ICON_PATHS = {
@@ -2248,7 +2248,7 @@ function backupPanel() {
     const f = file.files[0]; if (!f) return;
     let data;
     try { data = JSON.parse(await f.text()); } catch { data = null; }
-    if (!data || data.app !== "shopping-list" || !data.data) { msg.className = "err"; msg.textContent = "הקובץ הזה הוא לא גיבוי של רשימת הקניות."; file.value = ""; return; }
+    if (!data || data.app !== "shopping-list" || !data.data) { msg.className = "err"; msg.textContent = "הקובץ הזה הוא לא גיבוי של SmartSal."; file.value = ""; return; }
     msg.className = ""; msg.textContent = "";
     const when = new Date(data.at).toLocaleDateString("he-IL");
     const p = document.createElement("p"); p.textContent = `גיבוי מ-${when}. השחזור יחליף את כל מה שיש עכשיו בטלפון.`;
@@ -2272,7 +2272,7 @@ async function exportBackup() {
   const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
   const file = new File([blob], name, { type: "application/json" });
   try {
-    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "גיבוי רשימת הקניות" }); return; }
+    if (navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "גיבוי SmartSal" }); return; }
   } catch (e) { if (e && e.name === "AbortError") return; }
   const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
   document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 2000);
@@ -2481,8 +2481,8 @@ function renderAbout() {
   };
   const P = t => Object.assign(document.createElement("p"), { textContent: t });
   const brand = document.createElement("div"); brand.className = "brand";
-  brand.innerHTML = `<img src="icon-192-v2.png" alt=""><span><b>רשימת הקניות</b><span class="vsub"></span></span>`;
-  brand.querySelector(".vsub").textContent = `גרסה ${APP_VERSION}`;
+  brand.innerHTML = `<img src="icon-192-v2.png" alt=""><span><b dir="ltr">SmartSal</b><span class="vsub"></span></span>`;
+  brand.querySelector(".vsub").textContent = `רשימת קניות חכמה · גרסה ${APP_VERSION}`;
   const dl = document.createElement("dl");
   const row = (k, v) => dl.append(Object.assign(document.createElement("dt"), { textContent: k }), Object.assign(document.createElement("dd"), { textContent: v }));
   if (catalog.branch) row("סניף", `${catalog.branch.chainName} ${catalog.branch.name} · ${catalog.branch.id}`);
@@ -2504,7 +2504,7 @@ function renderAbout() {
       Object.assign(document.createElement("button"), { type: "button", className: "linkbtn", textContent: "תנאי שימוש", onclick: () => openLegal("terms") }),
       Object.assign(document.createElement("button"), { type: "button", className: "linkbtn", textContent: "הצהרת נגישות", onclick: () => openLegal("a11y") })),
     card("זכויות יוצרים",
-      P(`© ${new Date().getFullYear()} רשימת הקניות. כל הזכויות שמורות. אין להעתיק, לשכפל או להפיץ את האפליקציה, העיצוב או הקוד שלה ללא רשות.`),
+      P(`© ${new Date().getFullYear()} SmartSal. כל הזכויות שמורות. אין להעתיק, לשכפל או להפיץ את האפליקציה, העיצוב או הקוד שלה ללא רשות.`),
       P("המחירים והמבצעים נלקחים מהקבצים שהרשתות מפרסמות לפי חוק שקיפות המחירים (התשע\"ה-2014). שמות הרשתות, הלוגואים והסימנים המסחריים שייכים לבעליהם."),
       P("תמונות המוצרים שייכות לבעליהן (רמי לוי אונליין, שופרסל אונליין) ומוצגות לצורך זיהוי המוצר בלבד."),
       P("המידע מוצג כפי שהוא, לשימוש אישי. ייתכנו טעויות או שינויים במחיר בקופה; המחיר הקובע הוא המחיר בסניף.")),
@@ -2709,7 +2709,7 @@ function renderSharePanel() {
     const p2 = document.createElement("p"); p2.textContent = "כדי לצרף את אמא או בן משפחה: שלחו את הקישור. אם האפליקציה כבר מותקנת אצלם, הם יכולים גם להקליד את הקוד תחת \"שיתוף הרשימה\".";
     const row = document.createElement("div"); row.className = "row2";
     const wa = document.createElement("a"); wa.className = "btn"; wa.style.textDecoration = "none"; wa.textContent = "שליחה בוואטסאפ";
-    wa.href = "https://wa.me/?text=" + encodeURIComponent(`הצטרפו לרשימת הקניות שלנו 🛒\n${shareLink()}\nקוד הרשימה: ${listCode}`);
+    wa.href = "https://wa.me/?text=" + encodeURIComponent(`הצטרפו לרשימת הקניות שלנו ב-SmartSal 🛒\n${shareLink()}\nקוד הרשימה: ${listCode}`);
     wa.target = "_blank"; wa.rel = "noopener";
     const cp = document.createElement("button"); cp.type = "button"; cp.className = "btn ghost"; cp.textContent = "העתקת קישור";
     cp.onclick = async () => { try { await navigator.clipboard.writeText(shareLink()); toast("הקישור הועתק"); } catch { toast(shareLink()); } };
@@ -2819,11 +2819,11 @@ function renderWhatsNew() {
   const veteran = read(LS_KEY) != null || read("history") != null || read("favs") != null;
   if (!veteran) { store("whats-new", WHATS_NEW_ID); return; }
   const box = $("whatsNew");
-  box.innerHTML = `<div class="wn-hd"><span class="wn-badge">חדש</span><h2 id="wnTitle">חדש באפליקציה</h2></div>
+  box.innerHTML = `<div class="wn-hd"><span class="wn-badge">חדש</span><h2 id="wnTitle">קוראים לנו עכשיו <span dir="ltr">SmartSal</span> 🛒</h2></div>
     <ul>
-      <li><b>הדבקת רשימה:</b> קיבלתם רשימה בוואטסאפ? לוחצים על כפתור הלוח בשורת ההוספה ומדביקים – והיא הופכת לרשימה עם מחירים.</li>
-      <li><b>קטגוריות שנפתחות ונסגרות:</b> חץ בצד שמאל של כל קטגוריה, ו"סגירת כל הקטגוריות" כדי להתמקד במה שאתם עוברים עליו עכשיו.</li>
-      <li><b>הסל הקבוע</b> והערה למוצר (כפתור ${ico("dots")}) – מהגרסה הקודמת.</li>
+      <li>אותה אפליקציה, שם חדש. הרשימות, הסל הקבוע וההיסטוריה שלכם נשארו בדיוק כמו שהיו.</li>
+      <li><b>הדבקת רשימה:</b> קיבלתם רשימה בוואטסאפ? כפתור הלוח בשורת ההוספה – והיא הופכת לרשימה עם מחירים.</li>
+      <li><b>קטגוריות שנפתחות ונסגרות</b> עם חץ בצד שמאל, ו"סגירת כל הקטגוריות" כדי להתמקד.</li>
     </ul>
     <div class="acts"><button class="btn" type="button" data-a="ok">הבנתי, תודה</button></div>`;
   const done = () => { store("whats-new", WHATS_NEW_ID); box.hidden = true; };
@@ -3430,7 +3430,7 @@ function openLegal(kind) {
     box.append(c); return c;
   };
   if (kind === "terms") {
-    card("כללי", "השימוש באפליקציה \"רשימת הקניות\" חינמי ומיועד לשימוש אישי בלבד. השימוש באפליקציה מהווה הסכמה לתנאים אלה.");
+    card("כללי", "השימוש באפליקציה SmartSal חינמי ומיועד לשימוש אישי בלבד. השימוש באפליקציה מהווה הסכמה לתנאים אלה.");
     card("המחירים והמבצעים",
       "המחירים והמבצעים נלקחים מהקבצים שהרשתות מפרסמות לפי חוק שקיפות המחירים, ומתעדכנים בדרך כלל פעמיים ביום. הם מוצגים כהערכה בלבד.",
       "ייתכנו טעויות, עיכובים בעדכון או הבדלים מהמחיר בקופה. המחיר הקובע הוא המחיר בסניף. מבצעי מועדון וקופונים אינם כלולים.");
@@ -3459,8 +3459,8 @@ function openLegal(kind) {
 /* ---------- share the app + feedback ---------- */
 const APP_URL = location.origin + location.pathname.replace(/index\.html$/, "");
 $("shareAppBtn").onclick = async () => {
-  const text = "רשימת קניות חכמה עם המחירים והמבצעים של הסניף שלך – רמי לוי, שופרסל, ויקטורי, יוחננוף, אושר עד וקרפור. חינם 🛒";
-  if (navigator.share) { try { await navigator.share({ title: "רשימת הקניות", text, url: APP_URL }); return; } catch (e) { if (e && e.name === "AbortError") return; } }
+  const text = "SmartSal – רשימת קניות חכמה עם המחירים והמבצעים של הסניף שלך – רמי לוי, שופרסל, ויקטורי, יוחננוף, אושר עד וקרפור. חינם 🛒";
+  if (navigator.share) { try { await navigator.share({ title: "SmartSal", text, url: APP_URL }); return; } catch (e) { if (e && e.name === "AbortError") return; } }
   const a = document.createElement("a"); a.href = "https://wa.me/?text=" + encodeURIComponent(text + "\n" + APP_URL); a.target = "_blank"; a.rel = "noopener";
   document.body.append(a); a.click(); a.remove();
 };
