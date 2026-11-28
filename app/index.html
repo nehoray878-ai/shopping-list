@@ -7,7 +7,7 @@
 <title>רשימת הקניות</title>
 <meta name="description" content="רשימת קניות עם המחירים והמבצעים של הסניף שלך: רמי לוי, שופרסל, ויקטורי, יוחננוף, אושר עד וקרפור">
 <meta name="theme-color" content="#1E5A3C">
-<meta name="app-version" content="4.4">
+<meta name="app-version" content="4.5">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="קניות">
@@ -174,9 +174,17 @@ img { max-width: 100%; }
 #list { display: flex; flex-direction: column; gap: 18px; }
 .group { display: flex; flex-direction: column; gap: 10px; }
 .ghead {
-  display: flex; align-items: baseline; justify-content: space-between; gap: 8px; width: 100%;
-  border: 0; background: transparent; padding: 0 2px; text-align: start;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%;
+  border: 0; background: transparent; padding: 0 2px; text-align: start; color: var(--fg);
 }
+/* חץ פתיחה/סגירה גדול בצד שמאל של כל קטגוריה */
+.ghead .end { display: flex; align-items: center; gap: 8px; flex: none; }
+.ghead .chev { width: 36px; height: 36px; border-radius: 50%; background: var(--sunk); display: grid; place-items: center; flex: none; }
+.ghead .chev .ico { width: 20px; height: 20px; transition: transform .2s; color: var(--fg); }
+.group.closed .ghead .chev { background: var(--surface); }
+.group.closed .ghead .chev .ico { transform: rotate(90deg); }
+.gtools { display: flex; justify-content: flex-end; margin-bottom: -4px; }
+.gtools button { border: 0; background: transparent; color: var(--muted); font: inherit; font-size: 0.85rem; font-weight: 700; padding: 4px 2px; }
 .ghead .t { font-size: 1.25rem; font-weight: 800; display: flex; align-items: center; gap: 6px; }
 .ghead .t .ico { width: 18px; height: 18px; transition: transform .2s; color: var(--muted); align-self: center; }
 .ghead .n { font-size: 0.88rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
@@ -508,6 +516,25 @@ html.sheet-open, html.sheet-open body { overflow: hidden; overscroll-behavior: n
 .adm-u .t span { font-size: 0.78rem; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .adm-u.blocked .t b { text-decoration: line-through; color: var(--muted); }
 .adm-u .btn { min-height: 36px; padding: 6px 12px; font-size: 0.85rem; }
+/* scan a paper list */
+.scan-choose { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.scan-choose button { border: 0; border-radius: var(--r-lg); background: var(--surface); color: var(--fg); padding: 18px 10px; display: flex; flex-direction: column; align-items: center; gap: 8px; font-weight: 800; font-size: 1rem; }
+.scan-choose button .ico { width: 30px; height: 30px; color: var(--brand); }
+.scan-choose small { font-weight: 500; color: var(--muted); font-size: 0.8rem; }
+.scan-img { width: 100%; max-height: 180px; object-fit: contain; border-radius: var(--r-md); background: var(--sunk); }
+.scan-prog { height: 8px; border-radius: 99px; background: var(--sunk); overflow: hidden; }
+.scan-prog div { height: 100%; width: 0; background: var(--brand); transition: width .2s; }
+.slist { background: var(--surface); border-radius: var(--r-lg); overflow: hidden; }
+.srow { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-top: 1px solid var(--line); }
+.srow:first-child { border-top: 0; }
+.srow.off { opacity: .45; }
+.srow .tx { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.srow .tx input { font: inherit; font-size: 1rem; font-weight: 600; border: 0; border-bottom: 1.5px dashed var(--line); background: transparent; color: var(--fg); padding: 2px 0; width: 100%; }
+.srow .tx input:focus { outline: none; border-bottom-color: var(--brand); }
+.srow .match { font-size: 0.8rem; color: var(--muted); border: 0; background: transparent; text-align: start; padding: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.srow .match b { color: var(--down); font-weight: 700; }
+.srow .thumb { width: 38px; height: 38px; flex: none; }
+.scan-txt { font: inherit; font-size: 1rem; min-height: 160px; border: 2px solid var(--line); border-radius: 12px; padding: 10px; background: var(--bg); color: var(--fg); resize: vertical; }
 /* basket comparison */
 .cmpsum { background: var(--surface); border-radius: var(--r-lg); padding: 12px 14px; font-size: 0.9rem; color: var(--muted); }
 .cmpsum b { color: var(--fg); }
@@ -698,6 +725,9 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
           <button class="mic" id="micBtn" type="button" aria-label="הוספה בקול" aria-pressed="false" hidden>
             <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
           </button>
+          <button class="mic" id="scanBtn" type="button" aria-label="סריקת רשימה מדף או הדבקת רשימה">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M8 10h8M8 14h5"/></svg>
+          </button>
           <button class="go" type="submit" aria-label="הוספה לרשימה">
             <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
           </button>
@@ -819,6 +849,7 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
     <div class="spanel" id="cmpPanel" hidden></div>
     <div class="spanel" id="basketPanel" hidden></div>
     <div class="spanel about" id="privacyPanel" hidden></div>
+    <div class="spanel" id="scanPanel" hidden></div>
     <div class="spanel" id="adminPanel" hidden></div>
     <div class="spanel" id="listPanel" hidden></div>
     <div class="spanel" id="orderPanel" hidden></div>
@@ -844,6 +875,7 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
     <button class="linkbtn" id="gatePrivacy" type="button">מדיניות פרטיות</button>
   </div>
 </div>
+<input type="file" id="scanFile" accept="image/*" hidden>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script>
@@ -851,7 +883,7 @@ const $ = id => document.getElementById(id);
 const LS_KEY = "shopping-list-v2";
 const fmt = n => "₪" + n.toFixed(2);
 const APP_VERSION = document.querySelector('meta[name="app-version"]').content;   // לעדכן ב-<head> בכל גרסה
-const WHATS_NEW_ID = "4.4";   // לשנות רק כשיש כרטיס "מה חדש" חדש להציג
+const WHATS_NEW_ID = "4.5";   // לשנות רק כשיש כרטיס "מה חדש" חדש להציג
 
 /* ---------- icons (one stroke style everywhere, instead of emoji) ---------- */
 const ICON_PATHS = {
@@ -967,7 +999,8 @@ function addProduct(p, qty = 1) {
     const old = items.find(i => i.pid === p.id && i.done && listOf(i) === currentList);
     if (old) { old.done = false; old.doneAt = null; old.qty = qty; old.createdAt = Date.now(); }
     else items.push({ id: newId(), list: currentList, pid: p.id, name: p.n, qty, done: false, createdAt: Date.now(), doneAt: null });
-    toast(lists.length > 1 ? `נוסף ל"${curName()}": ${p.n}` : `נוסף: ${p.n}`);
+    const dep = deptOf(inList(p.id));
+    toast((lists.length > 1 ? `נוסף ל"${curName()}": ${p.n}` : `נוסף: ${p.n}`) + (closed.has(dep) ? ` · בקטגוריה "${dep}" (סגורה)` : ""));
   }
   save(); renderAll();
 }
@@ -1289,6 +1322,14 @@ function renderList() {
   }
   const coll = new Intl.Collator("he");
   const ordered = [...groups.entries()].sort((a, b) => rank(a[0]) - rank(b[0]));
+  // סגירת/פתיחת כל הקטגוריות – כדי להתמקד במה שעוברים עליו עכשיו בסופר
+  if (ordered.length > 2) {
+    const allClosed = ordered.every(([d]) => closed.has(d));
+    const tools = document.createElement("div"); tools.className = "gtools";
+    const tb = document.createElement("button"); tb.type = "button"; tb.textContent = allClosed ? "פתיחת כל הקטגוריות" : "סגירת כל הקטגוריות";
+    tb.onclick = () => { for (const [d] of ordered) allClosed ? closed.delete(d) : closed.add(d); saveClosed(); renderList(); };
+    tools.append(tb); list.append(tools);
+  }
   for (const [d, its] of ordered) {
     its.sort((a, b) => coll.compare(a.name, b.name));
     const sub = its.reduce((s, i) => s + lineCost(product(i), i.qty), 0);
@@ -1296,7 +1337,7 @@ function renderList() {
     const h = document.createElement("h2"); h.style.margin = "0";
     const btn = document.createElement("button"); btn.type = "button"; btn.className = "ghead";
     btn.setAttribute("aria-expanded", closed.has(d) ? "false" : "true");
-    btn.innerHTML = `<span class="t">${ico("down")}<span></span></span><span class="n"></span>`;
+    btn.innerHTML = `<span class="t"><span></span></span><span class="end"><span class="n"></span><span class="chev">${ico("down")}</span></span>`;
     btn.querySelector(".t span").textContent = d;
     btn.querySelector(".n").textContent = `${its.length} פריטים` + (sub ? ` · ${fmt(sub)}` : "");
     btn.onclick = () => { closed.has(d) ? closed.delete(d) : closed.add(d); saveClosed(); s.classList.toggle("closed"); btn.setAttribute("aria-expanded", closed.has(d) ? "false" : "true"); };
@@ -1359,14 +1400,14 @@ const PROCESSED = /מרוכז|אבקת|בחומץ|במלח|חמוץ|מיובש|�
 function voiceOptions(name, limit = 6) {
   const n = norm(name);
   const variants = wordVariants(n);
-  const habit = new Set([...favs, ...frequent(1), ...items.map(i => i.pid).filter(x => x != null)]);
+  const habit = new Set([...favs, ...frequent(1)]);   // מה שקונים בדרך כלל (לא מה שכבר ברשימה עכשיו)
   const pool = new Map();
   for (const v of variants) for (const p of search(v, "", Math.max(40, limit * 3))) pool.set(p.id, p);
   const score = p => {
     const s = norm(p.n); let sc = 0;
     if (variants.includes(s)) sc += 100;
     if (habit.has(p.id)) sc += 80;
-    if (variants.some(v => s.startsWith(v + " "))) sc += 30;
+    if (variants.some(v => s.startsWith(v + " "))) sc += 45;
     if (p.k) sc += 15;
     if (p.d) sc += 10;
     if (p.i) sc += 5;
@@ -2399,7 +2440,7 @@ $("dealsForm").addEventListener("submit", e => { e.preventDefault(); $("dealsInp
 $("dealsMore").onclick = () => { dealsShown += 40; renderDeals(); };
 
 /* ---------- settings sheet ---------- */
-const SHEET_PANELS = ["storePanel", "cmpPanel", "basketPanel", "privacyPanel", "adminPanel", "sheetMenu", "listPanel", "orderPanel", "sharePanel", "backupBox", "aboutBox", "recurPanel", "recurList"];
+const SHEET_PANELS = ["storePanel", "cmpPanel", "basketPanel", "privacyPanel", "scanPanel", "adminPanel", "sheetMenu", "listPanel", "orderPanel", "sharePanel", "backupBox", "aboutBox", "recurPanel", "recurList"];
 function menuItem(btn, icon, label, end = ico("chev", "ico chev")) {
   btn.innerHTML = ico(icon) + `<span class="lbl"></span>` + end;
   btn.querySelector(".lbl").textContent = label;
@@ -2459,6 +2500,11 @@ function renderAbout() {
       P("כדי לא לאבד נתונים כשמחליפים טלפון, כדאי לשמור גיבוי מדי פעם (בתפריט ההגדרות).")),
     card("", P("האפליקציה פרטית ואינה קשורה לאף רשת שיווק. תמונות המוצרים מאתרי רמי לוי אונליין ושופרסל אונליין, והמחירים מהמחירונים הרשמיים של הרשתות."),
       Object.assign(document.createElement("button"), { type: "button", className: "linkbtn", textContent: "מדיניות פרטיות ומחיקת נתונים", onclick: openPrivacy })),
+    card("זכויות יוצרים",
+      P(`© ${new Date().getFullYear()} רשימת הקניות. כל הזכויות שמורות. אין להעתיק, לשכפל או להפיץ את האפליקציה, העיצוב או הקוד שלה ללא רשות.`),
+      P("המחירים והמבצעים נלקחים מהקבצים שהרשתות מפרסמות לפי חוק שקיפות המחירים (התשע\"ה-2014). שמות הרשתות, הלוגואים והסימנים המסחריים שייכים לבעליהם."),
+      P("תמונות המוצרים שייכות לבעליהן (רמי לוי אונליין, שופרסל אונליין) ומוצגות לצורך זיהוי המוצר בלבד."),
+      P("המידע מוצג כפי שהוא, לשימוש אישי. ייתכנו טעויות או שינויים במחיר בקופה; המחיר הקובע הוא המחיר בסניף.")),
     ...(FIREBASE_CONFIG && !isAdmin() ? [Object.assign(document.createElement("button"), { type: "button", className: "linkbtn", textContent: "כניסת מנהל", onclick: adminLogin })] : []),
   );
 }
@@ -2772,10 +2818,9 @@ function renderWhatsNew() {
   const box = $("whatsNew");
   box.innerHTML = `<div class="wn-hd"><span class="wn-badge">חדש</span><h2 id="wnTitle">חדש באפליקציה</h2></div>
     <ul>
-      <li><b>הסל הקבוע:</b> כל הקנייה הקבועה בלחיצה אחת – מורידים רק את מה שלא צריך הפעם. אחרי כמה קניות האפליקציה מציעה סל לבד.</li>
-      <li><b>הערה למוצר</b> ("הירוק, לא האדום") ועוד אפשרויות – בכפתור ${ico("dots")} ליד כל מוצר.</li>
-      <li><b>רשימה משותפת:</b> שיתוף עם המשפחה בתפריט ${ico("menu")} – כל שינוי מופיע מיד אצל כולם.</li>
-      <li>החיפוש מבין גם שגיאות כתיב, ולהרבה יותר מוצרים יש תמונה.</li>
+      <li><b>סריקת רשימה מדף:</b> כתבתם רשימה על נייר? לוחצים על כפתור הסריקה בשורת ההוספה, מצלמים – והיא הופכת לרשימה. אפשר גם להדביק רשימה מוואטסאפ.</li>
+      <li><b>קטגוריות שנפתחות ונסגרות:</b> חץ בצד שמאל של כל קטגוריה, ו"סגירת כל הקטגוריות" כדי להתמקד במה שאתם עוברים עליו עכשיו.</li>
+      <li><b>הסל הקבוע</b> והערה למוצר (כפתור ${ico("dots")}) – מהגרסה הקודמת.</li>
     </ul>
     <div class="acts"><button class="btn" type="button" data-a="ok">הבנתי, תודה</button></div>`;
   const done = () => { store("whats-new", WHATS_NEW_ID); box.hidden = true; };
@@ -3293,6 +3338,141 @@ async function adminLogin() {
     if (!isAdmin()) toast("החשבון הזה אינו מנהל");
     else { toast("נכנסת כמנהל"); closeSheet(); }
   } catch (e) { if (e && e.code !== "auth/popup-closed-by-user") toast("הכניסה לא הצליחה"); }
+}
+
+/* ---------- scan a paper list (or paste one): text → products, on the phone, free ---------- */
+// הזיהוי רץ בטלפון עצמו (Tesseract, עברית). כתב מודפס או ברור מזוהה טוב; כתב יד – לפעמים צריך לתקן.
+// אחרי הזיהוי כל שורה מותאמת למוצר מהמאגר, ואפשר לתקן את הטקסט, להחליף מוצר או להוריד שורה לפני ההוספה.
+const TESS = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+let scanRows = [];
+$("scanBtn").onclick = openScan;
+function openScan() {
+  const box = $("scanPanel"); box.textContent = "";
+  box.append(Object.assign(document.createElement("p"), { textContent: "כתבתם רשימה על דף? מצלמים אותה והיא הופכת לרשימה באפליקציה. אפשר גם להדביק רשימה מוואטסאפ." }));
+  const ch = document.createElement("div"); ch.className = "scan-choose";
+  const cam = document.createElement("button"); cam.type = "button";
+  cam.innerHTML = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>צילום הדף</span><small>או תמונה מהגלריה</small>';
+  cam.onclick = () => { $("scanFile").value = ""; $("scanFile").click(); };
+  const paste = document.createElement("button"); paste.type = "button";
+  paste.innerHTML = ico("chat") + "<span>הדבקת רשימה</span><small>מוואטסאפ או מהערות</small>";
+  paste.onclick = openPaste;
+  ch.append(cam, paste);
+  box.append(ch, Object.assign(document.createElement("p"), { textContent: "טיפ לצילום: דף על משטח בהיר, הרבה אור, מצלמים מלמעלה וקרוב. שורה לכל מוצר." }));
+  sheetShow("scanPanel", "סריקת רשימה"); $("sheetBack").hidden = true;
+}
+function openPaste() {
+  const box = $("scanPanel"); box.textContent = "";
+  const ta = document.createElement("textarea"); ta.className = "scan-txt"; ta.placeholder = "חלב\n2 לחם\nעגבניות, מלפפונים\nשמן קנולה"; ta.setAttribute("aria-label", "הרשימה");
+  const go = document.createElement("button"); go.type = "button"; go.className = "btn"; go.textContent = "המשך";
+  go.onclick = () => { const rows = textToRows(ta.value); if (!rows.length) { toast("לא נמצאו מוצרים בטקסט"); return; } showScanRows(rows); };
+  box.append(Object.assign(document.createElement("p"), { textContent: "מדביקים את הרשימה – כל שורה או כל פסיק הוא מוצר." }), ta, go);
+  $("sheetTitle").textContent = "הדבקת רשימה";
+  setTimeout(() => ta.focus(), 50);
+}
+$("scanFile").addEventListener("change", async () => {
+  const f = $("scanFile").files[0]; if (!f) return;
+  const box = $("scanPanel"); box.textContent = "";
+  const url = URL.createObjectURL(f);
+  const img = Object.assign(document.createElement("img"), { className: "scan-img", src: url, alt: "" });
+  const msg = Object.assign(document.createElement("p"), { textContent: "מכינים את הזיהוי… (בפעם הראשונה זה לוקח כמה שניות)" });
+  const prog = document.createElement("div"); prog.className = "scan-prog"; prog.append(document.createElement("div"));
+  box.append(img, msg, prog);
+  if (!$("sheet").open) sheetShow("scanPanel", "סריקת רשימה");
+  try {
+    const canvas = await prepImage(url);
+    if (!window.Tesseract) await loadScript(TESS);
+    const worker = await Tesseract.createWorker("heb", 1, { logger: m => {
+      if (m.status === "recognizing text") { msg.textContent = "מזהה את הכתב…"; prog.firstChild.style.width = Math.round(m.progress * 100) + "%"; }
+    } });
+    const { data } = await worker.recognize(canvas);
+    worker.terminate();
+    const rows = textToRows(data.text);
+    if (!rows.length) { msg.textContent = "לא הצלחנו לקרוא את הכתב. נסו לצלם שוב, קרוב יותר ועם יותר אור – או להדביק את הרשימה."; prog.remove(); return; }
+    showScanRows(rows);
+  } catch (e) {
+    console.warn("scan", e); logError("scan: " + (e && e.message || e), "scan");
+    msg.textContent = "הזיהוי לא הצליח (צריך חיבור לאינטרנט בפעם הראשונה). נסו שוב, או הדביקו את הרשימה.";
+    prog.remove();
+  } finally { URL.revokeObjectURL(url); }
+});
+// הקטנה, אפור וחידוד ניגודיות – כתב על דף מזוהה הרבה יותר טוב
+function prepImage(url) {
+  return new Promise((res, rej) => {
+    const im = new Image();
+    im.onload = () => {
+      const sc = Math.min(1, 1800 / Math.max(im.width, im.height));
+      const c = document.createElement("canvas"); c.width = Math.round(im.width * sc); c.height = Math.round(im.height * sc);
+      const x = c.getContext("2d"); x.drawImage(im, 0, 0, c.width, c.height);
+      const d = x.getImageData(0, 0, c.width, c.height), a = d.data;
+      let lo = 255, hi = 0;
+      for (let i = 0; i < a.length; i += 4) { const g = a[i] * .299 + a[i + 1] * .587 + a[i + 2] * .114; a[i] = g; if (g < lo) lo = g; if (g > hi) hi = g; }
+      const span = Math.max(1, hi - lo);
+      for (let i = 0; i < a.length; i += 4) { const g = Math.min(255, Math.max(0, (a[i] - lo) / span * 255)); a[i] = a[i + 1] = a[i + 2] = g; }
+      x.putImageData(d, 0, 0); res(c);
+    };
+    im.onerror = rej; im.src = url;
+  });
+}
+// טקסט → שורות {name, qty}: שורה או פסיק לכל מוצר, בלי מספור/תבליטים, כמות כמו "2 לחם" או "לחם x2"
+function textToRows(text) {
+  const out = [];
+  for (let line of (text || "").split(/\n|,|;|،/)) {
+    line = line.replace(/^[\s\-–•*·.\d)\]]+(?=\D)/, m => /^\s*\d+\s+\D/.test(line) ? m : "").replace(/[|_~^"“”„]/g, " ").replace(/\s+/g, " ").trim();
+    if ((line.match(/[א-ת]/g) || []).length < 2) continue;
+    if (/^(רשימת )?(קניות|לקנות|סופר|רשימה)( ל?(שבוע|שבת|סופר|היום))?:?$/.test(norm(line))) continue;   // כותרת הדף
+    let qty = 1, m;
+    if ((m = line.match(/^(\d{1,2})\s*(?:x|×|יח'?|יחידות)?\s+(.+)$/))) { qty = +m[1]; line = m[2]; }
+    else if ((m = line.match(/^(.+?)\s*(?:x|×|\*)\s*(\d{1,2})$/))) { line = m[1]; qty = +m[2]; }
+    else if ((m = line.match(/^(.+?)\s+(\d{1,2})$/)) && !/(%|גר|ליטר|ק"ג|מ"ל)/.test(m[1].slice(-4))) { line = m[1]; qty = +m[2]; }
+    const w = norm(line).split(" ");
+    if (NUM_WORDS[w[0]] && w.length > 1) { qty = NUM_WORDS[w[0]]; line = w.slice(1).join(" "); }
+    out.push({ name: line.trim(), qty: Math.max(1, Math.min(qty, 50)) });
+  }
+  return out;
+}
+function bestMatch(name) { return catalog.products.length ? voiceOptions(name, 6) : []; }
+function showScanRows(rows) {
+  scanRows = rows.map(r => { const opts = bestMatch(r.name); return { ...r, on: true, opts, pick: opts[0] || null }; });
+  renderScanRows();
+}
+function renderScanRows() {
+  const box = $("scanPanel"); box.textContent = "";
+  $("sheetTitle").textContent = "מה מצאנו ברשימה";
+  box.append(Object.assign(document.createElement("p"), { textContent: "בדקו כל שורה: אפשר לתקן את הטקסט, ללחוץ על המוצר כדי להחליף אותו, או להוריד את הסימון." }));
+  const list = document.createElement("div"); list.className = "slist";
+  scanRows.forEach((r, k) => {
+    const row = document.createElement("div"); row.className = "srow" + (r.on ? "" : " off");
+    const cb = document.createElement("button"); cb.type = "button"; cb.className = "bchk" + (r.on ? " on" : "");
+    cb.innerHTML = `<span>${checkSvg}</span>`; cb.setAttribute("aria-pressed", r.on ? "true" : "false"); cb.setAttribute("aria-label", "לכלול: " + r.name);
+    cb.onclick = () => { r.on = !r.on; renderScanRows(); };
+    const tx = document.createElement("div"); tx.className = "tx";
+    const inp = document.createElement("input"); inp.value = r.name; inp.setAttribute("aria-label", "הטקסט שזוהה");
+    inp.onchange = () => { r.name = inp.value.trim(); r.opts = bestMatch(r.name); r.pick = r.opts[0] || null; renderScanRows(); };
+    const mt = document.createElement("button"); mt.type = "button"; mt.className = "match";
+    if (r.pick) { mt.innerHTML = "<b>↔</b> "; mt.append(`${r.pick.n} · ${fmt(r.pick.p)}`); }
+    else mt.textContent = "יתווסף כפריט חופשי (בלי מחיר)";
+    mt.onclick = () => {   // מעבר בין האפשרויות, ובסוף "פריט חופשי"
+      const i = r.pick ? r.opts.indexOf(r.pick) : -1;
+      r.pick = i + 1 < r.opts.length ? r.opts[i + 1] : null; renderScanRows();
+    };
+    tx.append(inp, mt);
+    row.append(cb, thumb(r.pick, r.name), tx, stepper(r.qty, r.pick, q => { r.qty = Math.max(stepOf(r.pick), q); renderScanRows(); }));
+    list.append(row);
+  });
+  const add1 = document.createElement("button"); add1.type = "button"; add1.className = "btn ghost"; add1.textContent = "＋ עוד שורה";
+  add1.onclick = () => { scanRows.push({ name: "", qty: 1, on: true, opts: [], pick: null }); renderScanRows(); const ins = $("scanPanel").querySelectorAll(".srow input"); ins[ins.length - 1].focus(); };
+  const chosen = scanRows.filter(r => r.on && r.name);
+  const go = document.createElement("button"); go.type = "button"; go.className = "btn"; go.disabled = !chosen.length;
+  go.textContent = chosen.length ? `הוספת ${chosen.length} מוצרים לרשימה` : "לא נבחרו מוצרים";
+  go.onclick = () => {
+    for (const r of chosen) {
+      if (r.pick) { const ex = inList(r.pick.id); if (ex) ex.qty = +(ex.qty + r.qty).toFixed(2); else items.push({ id: newId(), list: currentList, pid: r.pick.id, name: r.pick.n, qty: r.qty, done: false, createdAt: Date.now(), doneAt: null }); }
+      else if (!mineAll().some(i => !i.done && i.pid == null && i.name === r.name)) items.push({ id: newId(), list: currentList, pid: null, name: r.name, qty: r.qty, done: false, createdAt: Date.now(), doneAt: null });
+    }
+    save(); closeSheet(); renderAll(); toast(`נוספו ${chosen.length} מוצרים מהרשימה`);
+  };
+  const foot = document.createElement("div"); foot.className = "bfoot"; foot.append(go);
+  box.append(list, add1, foot);
 }
 
 /* ---------- privacy policy + delete my data ---------- */
