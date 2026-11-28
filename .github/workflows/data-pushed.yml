@@ -1,0 +1,8 @@
+# מסמן ל-main שיש מחירים חדשים; הפרסום עצמו ב-main (update-and-deploy.yml)
+name: מחירים חדשים
+on: push
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "מחירים חדשים"
