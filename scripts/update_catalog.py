@@ -409,7 +409,8 @@ def build_chain(key, stores, online, rev, today, images=None):
     cpl, cpr = table(chain_promos)
     # תמונה ממאגר שופרסל למוצרים שאין להם תמונה ברמי לוי. קוד קצר הוא קוד פנימי – רק בשופרסל עצמה
     im = {}
-    for c in names:
+    # בשופרסל עצמה – תמונה של שופרסל לכל מוצר שיש לו (גם אם יש תמונה ברמי לוי); ברשתות אחרות רק למוצרים בלי תמונה
+    for c in (count if key == "shufersal" else names):
         hit = (images or {}).get(c)
         if hit and (len(c) >= 8 or key == "shufersal"):
             im[c] = hit[0] if hit[1] == c or "729000" + hit[1] == c else f"{hit[0]}:{hit[1]}"
@@ -418,7 +419,7 @@ def build_chain(key, stores, online, rev, today, images=None):
         "codes": common, "price": [mode[c] for c in common],
         "units": unit_names, "u": {c: [r, uidx[uu]] for c, (r, uu) in units.items()},
         "names": names, "pl": cpl, "pr": cpr,
-        "imgBase": SHUF_IMG, "im": im,
+        "imgBase": SHUF_IMG, "im": im, "imOwn": key == "shufersal",
     })
 
     pos = {c: i for i, c in enumerate(common)}

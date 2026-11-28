@@ -7,7 +7,7 @@
 <title>רשימת הקניות</title>
 <meta name="description" content="רשימת קניות עם המחירים והמבצעים של הסניף שלך: רמי לוי, שופרסל, ויקטורי, יוחננוף, אושר עד וקרפור">
 <meta name="theme-color" content="#1E5A3C">
-<meta name="app-version" content="4.6">
+<meta name="app-version" content="4.7">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="קניות">
@@ -520,13 +520,6 @@ html.sheet-open, html.sheet-open body { overflow: hidden; overscroll-behavior: n
 .fb-kinds { display: flex; gap: 6px; flex-wrap: wrap; }
 #legalPanel .card-a p + p { margin-top: -2px; }
 .legal-date { color: var(--muted); font-size: 0.8rem; margin: 0; text-align: center; }
-.scan-choose { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.scan-choose button { border: 0; border-radius: var(--r-lg); background: var(--surface); color: var(--fg); padding: 18px 10px; display: flex; flex-direction: column; align-items: center; gap: 8px; font-weight: 800; font-size: 1rem; }
-.scan-choose button .ico { width: 30px; height: 30px; color: var(--brand); }
-.scan-choose small { font-weight: 500; color: var(--muted); font-size: 0.8rem; }
-.scan-img { width: 100%; max-height: 180px; object-fit: contain; border-radius: var(--r-md); background: var(--sunk); }
-.scan-prog { height: 8px; border-radius: 99px; background: var(--sunk); overflow: hidden; }
-.scan-prog div { height: 100%; width: 0; background: var(--brand); transition: width .2s; }
 .slist { background: var(--surface); border-radius: var(--r-lg); overflow: hidden; }
 .srow { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-top: 1px solid var(--line); }
 .srow:first-child { border-top: 0; }
@@ -728,8 +721,8 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
           <button class="mic" id="micBtn" type="button" aria-label="הוספה בקול" aria-pressed="false" hidden>
             <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="12" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
           </button>
-          <button class="mic" id="scanBtn" type="button" aria-label="סריקת רשימה מדף או הדבקת רשימה">
-            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V6a2 2 0 0 1 2-2h2M16 4h2a2 2 0 0 1 2 2v2M20 16v2a2 2 0 0 1-2 2h-2M8 20H6a2 2 0 0 1-2-2v-2"/><path d="M8 10h8M8 14h5"/></svg>
+          <button class="mic" id="scanBtn" type="button" aria-label="הדבקת רשימה (למשל מוואטסאפ)">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h4"/></svg>
           </button>
           <button class="go" type="submit" aria-label="הוספה לרשימה">
             <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
@@ -882,7 +875,6 @@ html.big .grid { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
     <button class="linkbtn" id="gatePrivacy" type="button">מדיניות פרטיות</button>
   </div>
 </div>
-<input type="file" id="scanFile" accept="image/*" hidden>
 <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
 <script>
@@ -2500,14 +2492,14 @@ function renderAbout() {
   box.append(
     card("", brand, dl),
     card("מאיפה המחירים?",
-      P("המחירים והמבצעים נלקחים מהמחירון הרשמי שכל רשת מפרסמת לכל סניף לפי חוק שקיפות המחירים, ומתעדכנים פעמיים ביום. שמות ותמונות המוצרים נלקחים מאתר רמי לוי אונליין לפי הברקוד, ולכן לחלק מהמוצרים ברשתות אחרות אין תמונה."),
+      P("המחירים והמבצעים נלקחים מהמחירון הרשמי שכל רשת מפרסמת לכל סניף לפי חוק שקיפות המחירים, ומתעדכנים פעמיים ביום. התמונות מוצגות לפי ברקוד – ברקוד מזהה מוצר מדויק, כך שהאריזה בתמונה היא האריזה שנמכרת בסניף. ברשת שיש לה תמונות משלה (רמי לוי, שופרסל) מוצגת התמונה שלה."),
       P("מבצעי מועדון לקוחות וקופונים לא כלולים. המחיר בקופה עשוי להיות שונה, והסכום ברשימה הוא הערכה בלבד.")),
     card("פרטיות",
       P(FIREBASE_CONFIG
         ? "בכניסה נשמרת רק כתובת המייל שכתבת ומתי נכנסת – כדי לדעת מי משתמש באפליקציה. מה שאתם קונים, הרשימות, הסניף, התקציב וההיסטוריה נשמרים רק בטלפון הזה ואף אחד לא רואה אותם. (אם תפעילו רשימה משותפת, היא נשמרת גם בענן כדי שתופיע אצל מי שקיבל את הקוד.) אין פרסומות."
         : "הרשימות, הקבועים, התקציב וההיסטוריה נשמרים רק בטלפון הזה. אין הרשמה, אין מעקב ואין פרסומות."),
       P("כדי לא לאבד נתונים כשמחליפים טלפון, כדאי לשמור גיבוי מדי פעם (בתפריט ההגדרות).")),
-    card("", P("האפליקציה פרטית ואינה קשורה לאף רשת שיווק. תמונות המוצרים מאתרי רמי לוי אונליין ושופרסל אונליין, והמחירים מהמחירונים הרשמיים של הרשתות."),
+    card("", P("האפליקציה פרטית ואינה קשורה לאף רשת שיווק. תמונות המוצרים לפי ברקוד מאתרי הרשתות (רמי לוי אונליין ושופרסל אונליין) – ברשת שיש לה תמונות משלה מוצגת התמונה שלה. המחירים מהמחירונים הרשמיים של כל סניף."),
       Object.assign(document.createElement("button"), { type: "button", className: "linkbtn", textContent: "מדיניות פרטיות ומחיקת נתונים", onclick: openPrivacy }),
       Object.assign(document.createElement("button"), { type: "button", className: "linkbtn", textContent: "תנאי שימוש", onclick: () => openLegal("terms") }),
       Object.assign(document.createElement("button"), { type: "button", className: "linkbtn", textContent: "הצהרת נגישות", onclick: () => openLegal("a11y") })),
@@ -2829,7 +2821,7 @@ function renderWhatsNew() {
   const box = $("whatsNew");
   box.innerHTML = `<div class="wn-hd"><span class="wn-badge">חדש</span><h2 id="wnTitle">חדש באפליקציה</h2></div>
     <ul>
-      <li><b>סריקת רשימה מדף:</b> כתבתם רשימה על נייר? לוחצים על כפתור הסריקה בשורת ההוספה, מצלמים – והיא הופכת לרשימה. אפשר גם להדביק רשימה מוואטסאפ.</li>
+      <li><b>הדבקת רשימה:</b> קיבלתם רשימה בוואטסאפ? לוחצים על כפתור הלוח בשורת ההוספה ומדביקים – והיא הופכת לרשימה עם מחירים.</li>
       <li><b>קטגוריות שנפתחות ונסגרות:</b> חץ בצד שמאל של כל קטגוריה, ו"סגירת כל הקטגוריות" כדי להתמקד במה שאתם עוברים עליו עכשיו.</li>
       <li><b>הסל הקבוע</b> והערה למוצר (כפתור ${ico("dots")}) – מהגרסה הקודמת.</li>
     </ul>
@@ -2897,12 +2889,16 @@ function buildCatalog(base, chain, br, sel) {
     if (ch[c] && !x.o) { x.pp = ch[c][0]; x.pc = ch[c][1]; }
     return x;
   };
+  // תמונה ממאגר שופרסל: "קידומת" או "קידומת:מק"ט"
+  const shufImg = c => { const im = chain.im && chain.im[c]; if (!im) return ""; const [pfx, sku] = im.split(":");
+    return `${chain.imgBase}${pfx}_M_P_${sku || (c.startsWith("729000") && c.length === 13 ? c.slice(6) : c)}_1.png`; };
   const products = [], seen = new Set();
   for (const b of base.products) {
     const c = b.b || String(b.id);
     let p = price.get(c), o = 0;
     if (p == null) { if (sel.chain !== "ramilevy") continue; p = b.p; o = 1; }   // רק ברמי לוי יש מחיר מהאתר
     const x = { ...b, p }; if (o) x.o = 1;
+    if (chain.imOwn) { const own = shufImg(c); if (own) x.i = own; }   // ברשת שיש לה תמונות משלה – התמונה שלה קודם
     products.push(decorate(x, c)); seen.add(c);
   }
   const extra = [];
@@ -2910,10 +2906,7 @@ function buildCatalog(base, chain, br, sel) {
     if (seen.has(c)) continue;
     const nm = chain.names[c]; if (!nm) continue;
     const id = sel.chain === "ramilevy" || c.length >= 8 ? "s" + c : `s${sel.chain}:${c}`;   // קוד קצר = קוד פנימי של הרשת
-    // תמונה ממאגר שופרסל (אם יש): "קידומת" או "קידומת:מק"ט"
-    const im = chain.im && chain.im[c];
-    const img = im ? (([pfx, sku]) => `${chain.imgBase}${pfx}_M_P_${sku || (c.startsWith("729000") && c.length === 13 ? c.slice(6) : c)}_1.png`)(im.split(":")) : "";
-    extra.push(decorate({ id, b: c, n: nm[0], p, d: "", i: img, k: nm[1] }, c));
+    extra.push(decorate({ id, b: c, n: nm[0], p, d: "", i: shufImg(c), k: nm[1] }, c));
   }
   const coll = new Intl.Collator("he");
   extra.sort((a, b) => (!a.i - !b.i) || coll.compare(a.n, b.n));   // עם תמונה קודם
@@ -3351,78 +3344,18 @@ async function adminLogin() {
   } catch (e) { if (e && e.code !== "auth/popup-closed-by-user") toast("הכניסה לא הצליחה"); }
 }
 
-/* ---------- scan a paper list (or paste one): text → products, on the phone, free ---------- */
-// הזיהוי רץ בטלפון עצמו (Tesseract, עברית). כתב מודפס או ברור מזוהה טוב; כתב יד – לפעמים צריך לתקן.
-// אחרי הזיהוי כל שורה מותאמת למוצר מהמאגר, ואפשר לתקן את הטקסט, להחליף מוצר או להוריד שורה לפני ההוספה.
-const TESS = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+/* ---------- paste a list (from WhatsApp / notes): text → products ---------- */
+// כל שורה מותאמת למוצר מהמאגר, ואפשר לתקן את הטקסט, להחליף מוצר או להוריד שורה לפני ההוספה.
 let scanRows = [];
-$("scanBtn").onclick = openScan;
-function openScan() {
-  const box = $("scanPanel"); box.textContent = "";
-  box.append(Object.assign(document.createElement("p"), { textContent: "כתבתם רשימה על דף? מצלמים אותה והיא הופכת לרשימה באפליקציה. אפשר גם להדביק רשימה מוואטסאפ." }));
-  const ch = document.createElement("div"); ch.className = "scan-choose";
-  const cam = document.createElement("button"); cam.type = "button";
-  cam.innerHTML = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg><span>צילום הדף</span><small>או תמונה מהגלריה</small>';
-  cam.onclick = () => { $("scanFile").value = ""; $("scanFile").click(); };
-  const paste = document.createElement("button"); paste.type = "button";
-  paste.innerHTML = ico("chat") + "<span>הדבקת רשימה</span><small>מוואטסאפ או מהערות</small>";
-  paste.onclick = openPaste;
-  ch.append(cam, paste);
-  box.append(ch, Object.assign(document.createElement("p"), { textContent: "טיפ לצילום: דף על משטח בהיר, הרבה אור, מצלמים מלמעלה וקרוב. שורה לכל מוצר." }));
-  sheetShow("scanPanel", "סריקת רשימה"); $("sheetBack").hidden = true;
-}
+$("scanBtn").onclick = () => { sheetShow("scanPanel", "הדבקת רשימה"); $("sheetBack").hidden = true; openPaste(); };
 function openPaste() {
   const box = $("scanPanel"); box.textContent = "";
   const ta = document.createElement("textarea"); ta.className = "scan-txt"; ta.placeholder = "חלב\n2 לחם\nעגבניות, מלפפונים\nשמן קנולה"; ta.setAttribute("aria-label", "הרשימה");
   const go = document.createElement("button"); go.type = "button"; go.className = "btn"; go.textContent = "המשך";
   go.onclick = () => { const rows = textToRows(ta.value); if (!rows.length) { toast("לא נמצאו מוצרים בטקסט"); return; } showScanRows(rows); };
-  box.append(Object.assign(document.createElement("p"), { textContent: "מדביקים את הרשימה – כל שורה או כל פסיק הוא מוצר." }), ta, go);
+  box.append(Object.assign(document.createElement("p"), { textContent: "קיבלתם רשימה בוואטסאפ או כתבתם בהערות? מדביקים אותה כאן – כל שורה או כל פסיק הוא מוצר." }), ta, go);
   $("sheetTitle").textContent = "הדבקת רשימה";
   setTimeout(() => ta.focus(), 50);
-}
-$("scanFile").addEventListener("change", async () => {
-  const f = $("scanFile").files[0]; if (!f) return;
-  const box = $("scanPanel"); box.textContent = "";
-  const url = URL.createObjectURL(f);
-  const img = Object.assign(document.createElement("img"), { className: "scan-img", src: url, alt: "" });
-  const msg = Object.assign(document.createElement("p"), { textContent: "מכינים את הזיהוי… (בפעם הראשונה זה לוקח כמה שניות)" });
-  const prog = document.createElement("div"); prog.className = "scan-prog"; prog.append(document.createElement("div"));
-  box.append(img, msg, prog);
-  if (!$("sheet").open) sheetShow("scanPanel", "סריקת רשימה");
-  try {
-    const canvas = await prepImage(url);
-    if (!window.Tesseract) await loadScript(TESS);
-    const worker = await Tesseract.createWorker("heb", 1, { logger: m => {
-      if (m.status === "recognizing text") { msg.textContent = "מזהה את הכתב…"; prog.firstChild.style.width = Math.round(m.progress * 100) + "%"; }
-    } });
-    const { data } = await worker.recognize(canvas);
-    worker.terminate();
-    const rows = textToRows(data.text);
-    if (!rows.length) { msg.textContent = "לא הצלחנו לקרוא את הכתב. נסו לצלם שוב, קרוב יותר ועם יותר אור – או להדביק את הרשימה."; prog.remove(); return; }
-    showScanRows(rows);
-  } catch (e) {
-    console.warn("scan", e); logError("scan: " + (e && e.message || e), "scan");
-    msg.textContent = "הזיהוי לא הצליח (צריך חיבור לאינטרנט בפעם הראשונה). נסו שוב, או הדביקו את הרשימה.";
-    prog.remove();
-  } finally { URL.revokeObjectURL(url); }
-});
-// הקטנה, אפור וחידוד ניגודיות – כתב על דף מזוהה הרבה יותר טוב
-function prepImage(url) {
-  return new Promise((res, rej) => {
-    const im = new Image();
-    im.onload = () => {
-      const sc = Math.min(1, 1800 / Math.max(im.width, im.height));
-      const c = document.createElement("canvas"); c.width = Math.round(im.width * sc); c.height = Math.round(im.height * sc);
-      const x = c.getContext("2d"); x.drawImage(im, 0, 0, c.width, c.height);
-      const d = x.getImageData(0, 0, c.width, c.height), a = d.data;
-      let lo = 255, hi = 0;
-      for (let i = 0; i < a.length; i += 4) { const g = a[i] * .299 + a[i + 1] * .587 + a[i + 2] * .114; a[i] = g; if (g < lo) lo = g; if (g > hi) hi = g; }
-      const span = Math.max(1, hi - lo);
-      for (let i = 0; i < a.length; i += 4) { const g = Math.min(255, Math.max(0, (a[i] - lo) / span * 255)); a[i] = a[i + 1] = a[i + 2] = g; }
-      x.putImageData(d, 0, 0); res(c);
-    };
-    im.onerror = rej; im.src = url;
-  });
 }
 // טקסט → שורות {name, qty}: שורה או פסיק לכל מוצר, בלי מספור/תבליטים, כמות כמו "2 לחם" או "לחם x2"
 function textToRows(text) {
@@ -3513,9 +3446,9 @@ function openLegal(kind) {
     card("המחויבות שלנו", "אנחנו רוצים שכל אחד יוכל להשתמש באפליקציה, כולל אנשים עם מוגבלות. האפליקציה נבנתה בהתאם להנחיות הנגישות WCAG 2.1 ברמה AA ולתקן הישראלי ת\"י 5568, ככל האפשר.");
     card("מה נעשה באפליקציה",
       "• טקסט גדול – בהגדרות.", "• מצב כהה ובהיר.", "• כל הכפתורים מתוארים לקוראי מסך (VoiceOver ו-TalkBack).", "• ניווט במקלדת, עם סימון ברור של הרכיב הנבחר.",
-      "• בלי אנימציות למי שביקש זאת בהגדרות הטלפון.", "• ניגודיות צבעים גבוהה.", "• הוספה בקול ובסריקה, למי שקשה לו להקליד.", "• המסך נשאר דלוק בזמן קנייה.");
+      "• בלי אנימציות למי שביקש זאת בהגדרות הטלפון.", "• ניגודיות צבעים גבוהה.", "• הוספה בקול והדבקת רשימה, למי שקשה לו להקליד.", "• המסך נשאר דלוק בזמן קנייה.");
     card("מגבלות ידועות",
-      "• לחלק מהמוצרים אין תמונה, ותמונות המוצרים אינן מתוארות מעבר לשם המוצר.", "• זיהוי כתב יד בסריקה עלול לטעות – תמיד מוצג מסך בדיקה לפני ההוספה.", "• שמות מוצרים מגיעים מהרשתות כפי שהם, לעתים בקיצורים.");
+      "• לחלק מהמוצרים אין תמונה, ותמונות המוצרים אינן מתוארות מעבר לשם המוצר.", "• שמות מוצרים מגיעים מהרשתות כפי שהם, לעתים בקיצורים.");
     card("נתקלתם בבעיה?",
       "אם משהו באפליקציה לא נגיש לכם, נשמח לדעת ולתקן. כתבו לנו ב\"שליחת משוב\" בהגדרות (סוג: נגישות), ואנחנו נחזור אליכם בהקדם.");
   }
